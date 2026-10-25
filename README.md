@@ -1,4 +1,4 @@
-First public release of **YDownloader**, a lean, fast download manager for Windows 11 (C# .NET 8, WPF).
+**YDownloader** is a lean, fast download manager for Windows 11 (C# .NET 8, WPF) with a link grabber, archive extraction, a browser extension for Chrome and Firefox, Click'n'Load and AllDebrid support. Get the latest version from the [Releases page](https://github.com/yusa1905/YDownloader/releases/latest).
 
 ![Main window](https://raw.githubusercontent.com/yusa1905/YDownloader/main/assets/screenshots/main.png)
 
