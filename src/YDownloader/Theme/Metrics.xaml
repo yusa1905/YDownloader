@@ -1,0 +1,238 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:s="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Schrift -->
+    <FontFamily x:Key="FontUi">Segoe UI Variable Text, Segoe UI</FontFamily>
+    <FontFamily x:Key="FontIcons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+    <s:Double x:Key="FontSizeSmall">11</s:Double>
+    <s:Double x:Key="FontSizeBody">13</s:Double>
+    <s:Double x:Key="FontSizeTitle">15</s:Double>
+    <s:Double x:Key="FontSizeBadge">10</s:Double>
+    <s:Double x:Key="FontSizeIcon">14</s:Double>
+    <s:Double x:Key="FontSizeIconSmall">12</s:Double>
+    <s:Double x:Key="FontSizeEmptyIcon">40</s:Double>
+    <s:Double x:Key="FontSizeCountdown">48</s:Double>
+
+    <!-- Abstände -->
+    <s:Double x:Key="SpaceS">4</s:Double>
+    <s:Double x:Key="SpaceM">8</s:Double>
+    <s:Double x:Key="SpaceL">16</s:Double>
+    <Thickness x:Key="PadS">4</Thickness>
+    <Thickness x:Key="PadM">8</Thickness>
+    <Thickness x:Key="PadL">16</Thickness>
+    <Thickness x:Key="PadSheet">20</Thickness>
+    <Thickness x:Key="GapTop">0,8,0,0</Thickness>
+    <Thickness x:Key="GapTopL">0,16,0,0</Thickness>
+    <Thickness x:Key="GapLeft">8,0,0,0</Thickness>
+    <Thickness x:Key="GapLeftS">4,0,0,0</Thickness>
+    <Thickness x:Key="GapRight">0,0,8,0</Thickness>
+
+    <!-- Fenster -->
+    <s:Double x:Key="TitleBarHeight">28</s:Double>
+    <GridLength x:Key="TitleBarRow">28</GridLength>
+    <GridLength x:Key="StatusBarRow">28</GridLength>
+    <Thickness x:Key="ResizeBorder">6</Thickness>
+    <CornerRadius x:Key="WindowCorner">10</CornerRadius>
+    <s:Double x:Key="WindowMinWidth">640</s:Double>
+    <s:Double x:Key="WindowMinHeight">400</s:Double>
+    <Thickness x:Key="ToolbarMargin">0,0,8,0</Thickness>
+    <!-- Lücke zwischen den Gruppen der Werkzeugleiste: Hinzufügen | Start/Pause | Aufräumen | Power | Einstellungen -->
+    <Thickness x:Key="ToolGroupGap">10,0,0,0</Thickness>
+    <Thickness x:Key="StatusBarPadding">12,0,12,0</Thickness>
+    <Thickness x:Key="SeparatorBottom">0,0,0,1</Thickness>
+    <Thickness x:Key="SeparatorTop">0,1,0,0</Thickness>
+
+    <!-- Ampel (macOS 11-15): Kreis 12, Mitte-zu-Mitte 20, linker Rand 13 -->
+    <s:Double x:Key="LightSize">12</s:Double>
+    <s:Double x:Key="LightGap">8</s:Double>
+    <Thickness x:Key="LightsMargin">13,0,0,0</Thickness>
+    <Thickness x:Key="LightSpacing">8,0,0,0</Thickness>
+    <s:Double x:Key="LightGlyphSize">6</s:Double>
+    <s:Double x:Key="LightGlyphStroke">1.2</s:Double>
+
+    <!-- Bedienelemente -->
+    <CornerRadius x:Key="ControlCorner">6</CornerRadius>
+    <CornerRadius x:Key="SmallCorner">4</CornerRadius>
+    <s:Double x:Key="ControlHeight">26</s:Double>
+    <s:Double x:Key="ToolButtonSize">24</s:Double>
+    <s:Double x:Key="RowButtonSize">24</s:Double>
+    <Thickness x:Key="ButtonPadding">12,0,12,0</Thickness>
+    <Thickness x:Key="InputPadding">6,4,6,4</Thickness>
+    <s:Double x:Key="ScrollBarSize">10</s:Double>
+    <Thickness x:Key="ScrollThumbMargin">2</Thickness>
+    <CornerRadius x:Key="ScrollThumbCorner">3</CornerRadius>
+    <s:Double x:Key="ScrollThumbMinLength">24</s:Double>
+    <s:Double x:Key="ButtonMinWidth">80</s:Double>
+    <!-- Fokusring: 2 px außen um das Element, grenzt direkt an den Rand -->
+    <Thickness x:Key="FocusRingThickness">2</Thickness>
+    <Thickness x:Key="FocusRingMargin">-2</Thickness>
+    <CornerRadius x:Key="FocusRingCorner">8</CornerRadius>
+    <CornerRadius x:Key="FocusRingCornerSmall">6</CornerRadius>
+    <!-- Deaktivierte Bedienelemente -->
+    <s:Double x:Key="DisabledOpacity">0.45</s:Double>
+    <s:Double x:Key="CheckBoxSize">14</s:Double>
+    <s:Double x:Key="FontSizeCheck">10</s:Double>
+    <Thickness x:Key="CheckLabelMargin">6,0,0,0</Thickness>
+    <!-- Platzhalter: Padding des Felds plus 2 px Innenabstand des Textes -->
+    <Thickness x:Key="HintMargin">8,4,6,4</Thickness>
+    <Thickness x:Key="FieldLabelMargin">0,0,0,4</Thickness>
+    <Thickness x:Key="ToolTipPadding">8,4,8,4</Thickness>
+
+    <!-- Menüs -->
+    <CornerRadius x:Key="MenuCorner">8</CornerRadius>
+    <Thickness x:Key="MenuPadding">5</Thickness>
+    <Thickness x:Key="MenuItemPadding">6,4,10,4</Thickness>
+    <Thickness x:Key="MenuSeparatorMargin">8,4,8,4</Thickness>
+    <Thickness x:Key="MenuGestureMargin">16,0,0,0</Thickness>
+    <Thickness x:Key="MenuShadowMargin">8,4,8,12</Thickness>
+    <GridLength x:Key="MenuCheckColumn">18</GridLength>
+    <s:Double x:Key="MenuMinWidth">180</s:Double>
+    <s:Double x:Key="MenuShadowBlur">16</s:Double>
+    <s:Double x:Key="MenuShadowDepth">4</s:Double>
+    <s:Double x:Key="SubmenuOffsetX">-4</s:Double>
+    <s:Double x:Key="SubmenuOffsetY">-10</s:Double>
+
+    <!-- Download-Liste -->
+    <Thickness x:Key="ListPadding">6,6,6,6</Thickness>
+    <Thickness x:Key="RowMargin">0,0,0,1</Thickness>
+    <Thickness x:Key="RowPadding">10,7,8,7</Thickness>
+    <CornerRadius x:Key="RowCorner">6</CornerRadius>
+    <s:Double x:Key="BadgeWidth">30</s:Double>
+    <s:Double x:Key="BadgeHeight">36</s:Double>
+    <CornerRadius x:Key="BadgeCorner">5</CornerRadius>
+    <GridLength x:Key="BadgeColumn">30</GridLength>
+    <GridLength x:Key="RowGap">12</GridLength>
+    <GridLength x:Key="SpeedColumn">104</GridLength>
+    <GridLength x:Key="RowButtonColumn">32</GridLength>
+    <Thickness x:Key="BadgeTextMargin">0,0,0,5</Thickness>
+    <!-- Kompakte Zeile für fertige Downloads (ca. 32 px) -->
+    <Thickness x:Key="RowPaddingCompact">10,4,8,4</Thickness>
+    <Thickness x:Key="PackagePartIndent">36,0,0,0</Thickness>
+    <GridLength x:Key="PackageChevronColumn">24</GridLength>
+    <s:Double x:Key="PackageStateMaxWidth">260</s:Double>
+    <s:Double x:Key="CompactBadgeHeight">22</s:Double>
+    <Thickness x:Key="CompactBadgeTextMargin">0,0,0,3</Thickness>
+    <GridLength x:Key="CompactSizeColumn">72</GridLength>
+    <GridLength x:Key="CompactTimeColumn">116</GridLength>
+    <GridLength x:Key="CompactStateColumn">150</GridLength>
+    <s:Double x:Key="CompactPackageMaxWidth">170</s:Double>
+    <Thickness x:Key="CompactPackageMargin">10,0,0,0</Thickness>
+    <s:Double x:Key="BarHeight">4</s:Double>
+    <Thickness x:Key="BarMargin">0,5,0,5</Thickness>
+    <Thickness x:Key="EtaMargin">0,2,0,0</Thickness>
+
+    <!-- Seitenleiste -->
+    <GridLength x:Key="SidebarColumn">190</GridLength>
+    <GridLength x:Key="SidebarIconColumn">22</GridLength>
+    <Thickness x:Key="SeparatorRight">0,0,1,0</Thickness>
+    <Thickness x:Key="SidebarPadding">8,8,8,8</Thickness>
+    <Thickness x:Key="SidebarRowPadding">6,4,8,4</Thickness>
+    <Thickness x:Key="SidebarHeaderMargin">0,12,0,0</Thickness>
+    <s:Double x:Key="SidebarEditButtonSize">20</s:Double>
+    <Thickness x:Key="LinkButtonPadding">6,4,6,4</Thickness>
+
+    <!-- Statusleiste -->
+    <s:Double x:Key="GraphWidth">160</s:Double>
+    <s:Double x:Key="GraphHeight">16</s:Double>
+    <Thickness x:Key="GraphMargin">8,0,8,0</Thickness>
+    <s:Double x:Key="GraphStrokeThickness">1.25</s:Double>
+    <!-- Luft über dem höchsten Wert, damit gleichbleibendes Tempo nicht als gefülltes Rechteck erscheint -->
+    <s:Double x:Key="GraphHeadroom">1.2</s:Double>
+    <s:Double x:Key="SpeedTextWidth">76</s:Double>
+    <s:Double x:Key="EtaTextWidth">92</s:Double>
+
+    <!-- Sheets -->
+    <CornerRadius x:Key="SheetCorner">10</CornerRadius>
+    <s:Double x:Key="SheetWidth">560</s:Double>
+    <s:Double x:Key="SheetWidthSmall">380</s:Double>
+    <s:Double x:Key="SheetWidthWide">620</s:Double>
+    <Thickness x:Key="GapLeftL">16,0,0,0</Thickness>
+    <Thickness x:Key="FieldLabelTopMargin">0,16,0,4</Thickness>
+    <Thickness x:Key="ListHeaderPadding">10,6,10,6</Thickness>
+    <Thickness x:Key="PlainRowPadding">6,4,6,4</Thickness>
+
+    <!-- Hinzufügen-Dialog -->
+    <s:Double x:Key="LinksBoxHeight">72</s:Double>
+    <s:Double x:Key="CandidatesMaxHeight">640</s:Double>
+    <s:Double x:Key="CandidatesMinHeight">120</s:Double>
+    <GridLength x:Key="SmallGap">8</GridLength>
+    <GridLength x:Key="SmallBadgeColumn">22</GridLength>
+    <s:Double x:Key="SmallBadgeWidth">22</s:Double>
+    <s:Double x:Key="SmallBadgeHeight">26</s:Double>
+    <Thickness x:Key="SmallBadgeTextMargin">0,0,0,3</Thickness>
+    <!-- Linkgrabber: Teile eines Pakets rücken unter dem Kopf ein, Online-Punkt -->
+    <Thickness x:Key="PackageIndent">30,0,0,0</Thickness>
+    <Thickness x:Key="PackageHeaderMargin">0,6,0,2</Thickness>
+    <Thickness x:Key="PackageCheckMargin">0,4,0,0</Thickness>
+    <s:Double x:Key="OnlineDotSize">8</s:Double>
+    <s:Double x:Key="RulesBoxHeight">64</s:Double>
+    <s:Double x:Key="CheckDashWidth">8</s:Double>
+    <s:Double x:Key="CheckDashHeight">2</s:Double>
+    <s:Double x:Key="FontSizeBadgeSmall">8</s:Double>
+    <Thickness x:Key="PopupPadding">8,0,8,0</Thickness>
+    <Thickness x:Key="GapTopS">0,4,0,0</Thickness>
+    <GridLength x:Key="FieldGap">12</GridLength>
+    <s:Double x:Key="CategoryRowsMaxHeight">300</s:Double>
+    <GridLength x:Key="CategoryNameColumn">130</GridLength>
+    <GridLength x:Key="CategoryButtonsColumn">52</GridLength>
+    <GridLength x:Key="CategoryPickerColumn">190</GridLength>
+    <Thickness x:Key="CategoryRowMargin">0,0,0,6</Thickness>
+    <GridLength x:Key="HostNameColumn">170</GridLength>
+    <GridLength x:Key="HostNumberColumn">92</GridLength>
+    <GridLength x:Key="HostButtonColumn">28</GridLength>
+    <s:Double x:Key="AfterChoiceWidth">340</s:Double>
+    <Thickness x:Key="CountdownUnitMargin">4,0,0,8</Thickness>
+    <GridLength x:Key="QueueLimitColumn">96</GridLength>
+    <s:Double x:Key="QueueTimeWidth">64</s:Double>
+    <Thickness x:Key="QueueRowMargin">0,0,0,14</Thickness>
+    <Thickness x:Key="QueueDayMargin">0,0,12,0</Thickness>
+    <Thickness x:Key="QueueLabelMargin">8,0,8,0</Thickness>
+    <s:Double x:Key="QueueRowsMaxHeight">300</s:Double>
+    <Thickness x:Key="DropHintMargin">8</Thickness>
+    <Thickness x:Key="DropHintThickness">2</Thickness>
+    <Thickness x:Key="SheetMargin">24,12,24,24</Thickness>
+    <s:Double x:Key="SheetShadowBlur">30</s:Double>
+    <s:Double x:Key="SheetShadowDepth">8</s:Double>
+    <s:Double x:Key="SheetShadowOpacity">0.25</s:Double>
+
+    <!-- Detailansicht -->
+    <GridLength x:Key="DetailLabelColumn">110</GridLength>
+    <GridLength x:Key="ConnNameColumn">22</GridLength>
+    <GridLength x:Key="ConnRangeColumn">128</GridLength>
+    <GridLength x:Key="ConnPercentColumn">38</GridLength>
+    <GridLength x:Key="ConnSpeedColumn">82</GridLength>
+    <GridLength x:Key="LogTimeColumn">120</GridLength>
+    <s:Double x:Key="ConnGraphWidth">100</s:Double>
+    <!-- Pixel je Messwert bei vollem Graphen: 1 px bei 4 Messungen pro Sekunde heißt, die 100 px zeigen die letzten 25 s (Tooltip im Detail-Sheet) -->
+    <s:Double x:Key="ConnGraphStep">1</s:Double>
+    <s:Double x:Key="ConnGraphHeight">20</s:Double>
+    <Thickness x:Key="DetailRowMargin">0,0,0,6</Thickness>
+    <Thickness x:Key="DetailLabelMargin">0,2,0,6</Thickness>
+    <!-- Ein markierbares Feld rückt den Text um 2 px ein: so steht er auf einer Linie mit dem übrigen Text -->
+    <Thickness x:Key="DetailBoxMargin">-2,0,0,6</Thickness>
+    <Thickness x:Key="BoxInset">-2,0,0,0</Thickness>
+    <Thickness x:Key="LinkButtonInset">-6,0,0,0</Thickness>
+    <Thickness x:Key="SectionGapDetailFirst">0,10,0,8</Thickness>
+    <Thickness x:Key="SectionGapDetail">0,8,0,8</Thickness>
+    <Thickness x:Key="DetailTempoMargin">0,0,0,8</Thickness>
+    <Thickness x:Key="ConnRowMargin">0,0,0,4</Thickness>
+    <Thickness x:Key="LogEmptyMargin">0,2,0,0</Thickness>
+    <Thickness x:Key="DetailHeaderPadding">0,0,0,10</Thickness>
+
+    <!-- Einstellungs-Sheet -->
+    <GridLength x:Key="SettingsLabelColumn">200</GridLength>
+    <s:Double x:Key="SettingsChoiceWidth">180</s:Double>
+    <Thickness x:Key="SettingsRowMargin">0,0,0,10</Thickness>
+    <Thickness x:Key="SectionTitleMargin">0,16,0,8</Thickness>
+    <Thickness x:Key="SettingsScrollPadding">0,0,12,0</Thickness>
+    <!-- Dichtere Fassung für das Einstellungs-Sheet: ohne Scrollen in einem Fenster von 600 px Höhe -->
+    <GridLength x:Key="SettingsCompactLabelColumn">170</GridLength>
+    <s:Double x:Key="SettingsScaleWidth">90</s:Double>
+    <Thickness x:Key="SettingsCompactRowMargin">0,0,0,5</Thickness>
+    <Thickness x:Key="SettingsFirstSectionMargin">0,8,0,6</Thickness>
+    <Thickness x:Key="SettingsSectionMargin">0,10,0,6</Thickness>
+    <Thickness x:Key="SettingsPairLabelMargin">16,0,8,5</Thickness>
+    <!-- Die Beschriftungsspalte mit Hinweis grenzt an die Kästchen: rechts etwas Luft -->
+    <Thickness x:Key="SettingsNoteMargin">0,0,12,5</Thickness>
+</ResourceDictionary>

@@ -1,0 +1,84 @@
+<UserControl x:Class="YDownloader.Sheets.DebridSheet"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:YDownloader"
+             Width="{DynamicResource SheetWidthWide}">
+
+    <UserControl.Resources>
+        <Style x:Key="RowLabel" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="{DynamicResource SettingsCompactRowMargin}"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="{l:Str Debrid.Title}" Style="{StaticResource SheetTitle}"/>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="{DynamicResource SettingsScrollPadding}">
+                <TextBlock Text="{l:Str Debrid.Intro}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"
+                           Margin="{DynamicResource GapTopS}"/>
+
+                <CheckBox x:Name="EnabledBox" Content="{l:Str Debrid.Enable}" Click="Enabled_Click" Margin="{DynamicResource SettingsSectionMargin}"/>
+
+                <Grid Margin="{DynamicResource GapTop}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{DynamicResource SettingsCompactLabelColumn}"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{l:Str Debrid.Key}" Style="{StaticResource RowLabel}"/>
+                    <PasswordBox x:Name="KeyBox" Grid.Column="1" Margin="{DynamicResource SettingsCompactRowMargin}"
+                                 PasswordChanged="KeyBox_PasswordChanged"/>
+                    <Button x:Name="CheckButton" Grid.Column="2" Style="{StaticResource PushButton}" Content="{l:Str Debrid.Check}"
+                            Margin="{DynamicResource GapLeft}" Click="Check_Click"/>
+                </Grid>
+                <TextBlock x:Name="KeyState" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"
+                           Margin="{DynamicResource GapTopS}"/>
+                <Button x:Name="RemoveKeyButton" Style="{StaticResource LinkButton}" Content="{l:Str Debrid.RemoveKey}"
+                        HorizontalAlignment="Left" Margin="{DynamicResource LinkButtonInset}" Click="RemoveKey_Click"/>
+                <TextBlock x:Name="CheckResult" TextWrapping="Wrap" Margin="{DynamicResource GapTopS}" Visibility="Collapsed"/>
+
+                <TextBlock Text="{l:Str Debrid.HostsSection}" Style="{StaticResource SectionTitle}" Margin="{DynamicResource SettingsSectionMargin}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="HostFilter" Tag="{l:Str Debrid.HostsFilter}" TextChanged="HostFilter_TextChanged"/>
+                    <Button x:Name="LoadHostsButton" Grid.Column="1" Style="{StaticResource PushButton}"
+                            Margin="{DynamicResource GapLeft}" Click="LoadHosts_Click"/>
+                </Grid>
+                <TextBlock x:Name="HostsState" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"
+                           Margin="{DynamicResource GapTopS}"/>
+                <ScrollViewer MaxHeight="{DynamicResource CategoryRowsMaxHeight}" VerticalScrollBarVisibility="Auto"
+                              Margin="{DynamicResource GapTopS}">
+                    <ItemsControl x:Name="HostList" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Mode=OneWay}" Foreground="{DynamicResource TextPrimary}"
+                                           Margin="{DynamicResource SettingsCompactRowMargin}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </StackPanel>
+        </ScrollViewer>
+
+        <TextBlock x:Name="ErrorText" Grid.Row="2" Style="{StaticResource SecondaryText}" Foreground="{DynamicResource TextError}"
+                   Margin="{DynamicResource GapTop}" TextWrapping="Wrap" Visibility="Collapsed"/>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="{DynamicResource GapTopL}">
+            <Button Content="{l:Str Common.Cancel}" Style="{StaticResource PushButton}" IsCancel="True" Click="Cancel_Click"/>
+            <Button Content="{l:Str Common.Apply}" Style="{StaticResource AccentButton}" IsDefault="True"
+                    Margin="{DynamicResource GapLeft}" Click="Save_Click"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

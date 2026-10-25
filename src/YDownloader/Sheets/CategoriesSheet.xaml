@@ -1,0 +1,66 @@
+<UserControl x:Class="YDownloader.Sheets.CategoriesSheet"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="clr-namespace:YDownloader.Sheets"
+             xmlns:l="clr-namespace:YDownloader"
+             Width="{DynamicResource SheetWidthWide}">
+
+    <UserControl.Resources>
+        <DataTemplate x:Key="RowTemplate" DataType="{x:Type s:CategoryRow}">
+            <Grid Margin="{DynamicResource CategoryRowMargin}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="{DynamicResource CategoryNameColumn}"/>
+                    <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="{l:Str Categories.NameHint}"/>
+                <TextBox Grid.Column="2" Text="{Binding Extensions, UpdateSourceTrigger=PropertyChanged}" Tag="mkv mp4 …"/>
+                <TextBox Grid.Column="4" Text="{Binding Folder, UpdateSourceTrigger=PropertyChanged}" Tag="{l:Str Categories.FolderHint}"/>
+                <Button Grid.Column="5" Style="{StaticResource IconButton}" Content="{DynamicResource IconFolder}"
+                        ToolTip="{l:Str Categories.ChooseFolderTip}" Margin="{DynamicResource GapLeftS}" Click="BrowseRow_Click"/>
+                <Button Grid.Column="6" Style="{StaticResource IconButton}" Content="{DynamicResource IconDelete}"
+                        ToolTip="{l:Str Categories.DeleteTip}" Click="DeleteRow_Click"/>
+            </Grid>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <TextBlock Text="{l:Str Categories.Title}" Style="{StaticResource SheetTitle}"/>
+        <TextBlock Style="{StaticResource SecondaryText}" Margin="{DynamicResource GapTopS}" TextWrapping="Wrap"
+                   Text="{l:Str Categories.Intro}"/>
+
+        <Grid Margin="{DynamicResource FieldLabelTopMargin}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{DynamicResource CategoryNameColumn}"/>
+                <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="{DynamicResource CategoryButtonsColumn}"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{l:Str Categories.Name}" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="2" Text="{l:Str Categories.Extensions}" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="4" Text="{l:Str Categories.Folder}" Style="{StaticResource FieldLabel}"/>
+        </Grid>
+
+        <ScrollViewer MaxHeight="{DynamicResource CategoryRowsMaxHeight}" VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="Rows" ItemTemplate="{StaticResource RowTemplate}" Focusable="False"/>
+        </ScrollViewer>
+
+        <Button Style="{StaticResource PushButton}" Content="{l:Str Categories.AddRow}" HorizontalAlignment="Left"
+                Margin="{DynamicResource GapTopS}" Click="AddRow_Click"/>
+
+        <TextBlock x:Name="ErrorText" Style="{StaticResource SecondaryText}" Foreground="{DynamicResource TextError}"
+                   Margin="{DynamicResource GapTop}" TextWrapping="Wrap" Visibility="Collapsed"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="{DynamicResource GapTopL}">
+            <Button Content="{l:Str Common.Cancel}" Style="{StaticResource PushButton}" IsCancel="True" Click="Cancel_Click"/>
+            <Button Content="{l:Str Common.Apply}" Style="{StaticResource AccentButton}" IsDefault="True"
+                    Margin="{DynamicResource GapLeft}" Click="Save_Click"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

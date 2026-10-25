@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extName__",
+  "version": "1.0.0",
+  "description": "__MSG_extDescription__",
+  "default_locale": "en",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyyOoTtke6A974Gvfo3MuGGgze7uaF4mbYRSiujg3G/wlJ+2ofy6JOz7jjjIW8Z//Y2SoFiKAYQFCNT/D1q6i2emnVrNvHPQXqHhUyyqCyd9xg0Qh/xmjvdDGXTw5UNQAoudySVe4MPK+908tFWF3EPS6IvvoaIBIblyDBa8voTFyj2eiw7Rj1WIzt5dyAwkb6w3sqg7eSC5L7jnwMMVuL3G1tVc8Ynr8/JH8b0Znt8bNz25feDk9Qtaj9olPFw+SsiiJTuYYTmbbfMQqgEhcketkd6729etpaEwNrDoMxrZbptEQm0uCiXJlXgHmyGQSCl/HkF9GE2JkjKb0NtAL+QIDAQAB",
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "permissions": ["contextMenus", "nativeMessaging"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "__MSG_actionTitle__",
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png"
+    }
+  }
+}

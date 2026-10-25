@@ -1,0 +1,25 @@
+<UserControl x:Class="YDownloader.Sheets.CountdownSheet"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:YDownloader"
+             Width="{DynamicResource SheetWidthSmall}">
+
+    <StackPanel>
+        <TextBlock x:Name="TitleText" Style="{StaticResource SheetTitle}"/>
+        <TextBlock x:Name="ReasonText" Style="{StaticResource SecondaryText}" Margin="{DynamicResource GapTopS}"
+                   TextWrapping="Wrap"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="{DynamicResource GapTopL}">
+            <TextBlock x:Name="SecondsText" FontSize="{DynamicResource FontSizeCountdown}" FontWeight="SemiBold"
+                       Typography.NumeralAlignment="Tabular" Text="60"/>
+            <TextBlock Text="{l:Str Countdown.Unit}" FontSize="{DynamicResource FontSizeTitle}" Foreground="{DynamicResource TextSecondary}"
+                       VerticalAlignment="Bottom" Margin="{DynamicResource CountdownUnitMargin}"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="{DynamicResource GapTopL}">
+            <Button x:Name="NowButton" Content="{l:Str Countdown.Now}" Style="{StaticResource PushButton}" Click="Now_Click"/>
+            <Button x:Name="CancelButton" Content="{l:Str Common.Cancel}" Style="{StaticResource AccentButton}" IsDefault="True"
+                    IsCancel="True" Margin="{DynamicResource GapLeft}" Click="Cancel_Click"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

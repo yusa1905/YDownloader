@@ -1,0 +1,61 @@
+<UserControl x:Class="YDownloader.Sheets.EditSheet"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:YDownloader"
+             Width="{DynamicResource SheetWidth}">
+    <StackPanel>
+        <TextBlock x:Name="Heading" Style="{StaticResource SheetTitle}" TextTrimming="CharacterEllipsis"/>
+        <TextBlock x:Name="Info" Style="{StaticResource SecondaryText}" Margin="{DynamicResource GapTopS}"/>
+
+        <StackPanel x:Name="NamePanel">
+            <TextBlock Text="{l:Str Edit.FileName}" Style="{StaticResource FieldLabel}" Margin="{DynamicResource FieldLabelTopMargin}"/>
+            <TextBox x:Name="NameBox"/>
+        </StackPanel>
+
+        <TextBlock Text="{l:Str Add.SaveIn}" Style="{StaticResource FieldLabel}" Margin="{DynamicResource FieldLabelTopMargin}"/>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="FolderBox"/>
+            <Button x:Name="BrowseButton" Grid.Column="1" Style="{StaticResource PushButton}" Content="{l:Str Common.BrowseFolder}"
+                    Margin="{DynamicResource GapLeft}" Click="Browse_Click"/>
+        </Grid>
+
+        <StackPanel x:Name="UrlPanel">
+            <TextBlock Text="{l:Str Detail.Link}" Style="{StaticResource FieldLabel}" Margin="{DynamicResource FieldLabelTopMargin}"/>
+            <TextBox x:Name="UrlBox" TextChanged="UrlBox_TextChanged"/>
+            <TextBlock x:Name="UrlHint" Style="{StaticResource SecondaryText}" Margin="{DynamicResource GapTopS}" TextWrapping="Wrap"
+                       Text="{l:Str Edit.UrlHint}" Visibility="Collapsed"/>
+        </StackPanel>
+
+        <Grid Margin="{DynamicResource FieldLabelTopMargin}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="{DynamicResource FieldGap}"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="{l:Str Common.Category}" Style="{StaticResource FieldLabel}"/>
+                <Button x:Name="CategoryButton" Style="{StaticResource PopupButton}"/>
+            </StackPanel>
+            <StackPanel x:Name="ChecksumPanel" Grid.Column="2">
+                <TextBlock Text="{l:Str Detail.Checksum}" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="ChecksumBox" Tag="{l:Str Edit.ChecksumHint}"/>
+            </StackPanel>
+        </Grid>
+
+        <TextBlock x:Name="LockHint" Style="{StaticResource SecondaryText}" Margin="{DynamicResource GapTop}" TextWrapping="Wrap"
+                   Text="{l:Str Edit.LockHint}"
+                   Visibility="Collapsed"/>
+        <TextBlock x:Name="ErrorText" Style="{StaticResource SecondaryText}" Foreground="{DynamicResource TextError}"
+                   Margin="{DynamicResource GapTop}" TextWrapping="Wrap" Visibility="Collapsed"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="{DynamicResource GapTopL}">
+            <Button Content="{l:Str Common.Cancel}" Style="{StaticResource PushButton}" IsCancel="True" Click="Cancel_Click"/>
+            <Button x:Name="SaveButton" Content="{l:Str Common.Apply}" Style="{StaticResource AccentButton}" IsDefault="True"
+                    Margin="{DynamicResource GapLeft}" Click="Save_Click"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>YDownloader</RootNamespace>
+    <AssemblyName>YDownloader</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\assets\icon.ico</ApplicationIcon>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Product>YDownloader</Product>
+    <Description>YDownloader</Description>
+    <!-- Die Git-Commit-Kennung nicht an die Version haengen (sonst "1.0.0+hash"). -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <StartupObject>YDownloader.Program</StartupObject>
+    <TieredPGO>false</TieredPGO>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- WPF-Bindungen mit Umwandlung fragen nach der Kultur "en-us". Ohne das wirft der Invariant-Modus. -->
+    <PredefinedCulturesOnly>false</PredefinedCulturesOnly>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="YDownloader.Tests" />
+  </ItemGroup>
+
+  <!-- Browser-Erweiterung: Der Ordner "extension" im Repo landet als "Extension" neben der exe (Chrome, manifest.json mit
+       service_worker), auch beim Veröffentlichen. Firefox braucht ein anderes Manifest (background.scripts): Es liegt als
+       manifest.firefox.json im Repo und wird zu "Extension\firefox\manifest.json", daneben dieselben Dateien. -->
+  <ItemGroup>
+    <None Include="..\..\extension\**" Exclude="..\..\extension\manifest.firefox.json" Link="Extension\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\extension\**" Exclude="..\..\extension\manifest.json;..\..\extension\manifest.firefox.json" Link="Extension\firefox\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\extension\manifest.firefox.json" Link="Extension\firefox\manifest.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Sprachdateien: eingebettet, damit die exe allein läuft. Eine Datei je Sprache, siehe Loc.cs. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Languages\*.json" LogicalName="Lang.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

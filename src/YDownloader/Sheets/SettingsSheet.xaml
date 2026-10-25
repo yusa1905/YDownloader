@@ -1,0 +1,234 @@
+<UserControl x:Class="YDownloader.Sheets.SettingsSheet"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:YDownloader"
+             Width="{DynamicResource SheetWidthWide}">
+
+    <UserControl.Resources>
+        <Style x:Key="RowLabel" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="{DynamicResource SettingsCompactRowMargin}"/>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Die Einstellungen scrollen nur, wenn das Fenster sehr niedrig ist (unter ca. 600 px): Knöpfe bleiben immer sichtbar. -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="{l:Str Settings.Title}" Style="{StaticResource SheetTitle}"/>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="{DynamicResource SettingsScrollPadding}">
+
+                <!-- Ein Abschnitt für Downloads, Darstellung und Sprache: spart eine Überschrift, damit alles ohne Scrollen passt. -->
+                <TextBlock Text="{l:Str Settings.Section.General}" Style="{StaticResource SectionTitle}" Margin="{DynamicResource SettingsFirstSectionMargin}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{DynamicResource SettingsCompactLabelColumn}"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="{l:Str Settings.DownloadFolder}" Style="{StaticResource RowLabel}"/>
+                    <Grid Grid.Column="1" Margin="{DynamicResource SettingsCompactRowMargin}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="FolderBox"/>
+                        <Button Grid.Column="1" Style="{StaticResource PushButton}" Content="{l:Str Common.BrowseFolder}"
+                                Margin="{DynamicResource GapLeft}" Click="BrowseFolder_Click"/>
+                    </Grid>
+
+                    <TextBlock Grid.Row="1" Text="{l:Str Settings.Concurrent}" Style="{StaticResource RowLabel}"/>
+                    <Button x:Name="ConcurrentButton" Grid.Row="1" Grid.Column="1" Style="{StaticResource PopupButton}"
+                            Width="{DynamicResource SettingsChoiceWidth}" HorizontalAlignment="Left"
+                            Margin="{DynamicResource SettingsCompactRowMargin}"/>
+                </Grid>
+
+                <!-- Design und Skalierung teilen sich eine Zeile, die Sprache hat eine eigene mit Hinweis. -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{DynamicResource SettingsCompactLabelColumn}"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="{l:Str Settings.Theme}" Style="{StaticResource RowLabel}"/>
+                    <Button x:Name="ThemeButton" Grid.Column="1" Style="{StaticResource PopupButton}"
+                            Width="{DynamicResource SettingsChoiceWidth}" HorizontalAlignment="Left"
+                            Margin="{DynamicResource SettingsCompactRowMargin}"/>
+
+                    <TextBlock Grid.Column="2" Text="{l:Str Settings.Scale}" Style="{StaticResource RowLabel}"
+                               Margin="{DynamicResource SettingsPairLabelMargin}"/>
+                    <Button x:Name="ScaleButton" Grid.Column="3" Style="{StaticResource PopupButton}"
+                            Width="{DynamicResource SettingsScaleWidth}" HorizontalAlignment="Left"
+                            Margin="{DynamicResource SettingsCompactRowMargin}"/>
+
+                    <TextBlock Grid.Row="1" Text="{l:Str Settings.Language}" Style="{StaticResource RowLabel}"/>
+                    <Button x:Name="LanguageButton" Grid.Row="1" Grid.Column="1" Style="{StaticResource PopupButton}"
+                            Width="{DynamicResource SettingsChoiceWidth}" HorizontalAlignment="Left"
+                            Margin="{DynamicResource SettingsCompactRowMargin}"/>
+                    <TextBlock Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Text="{l:Str Settings.LanguageHint}"
+                               Style="{StaticResource SecondaryText}" Margin="{DynamicResource SettingsPairLabelMargin}"
+                               VerticalAlignment="Center"/>
+                </Grid>
+
+                <TextBlock Text="{l:Str Settings.Section.System}" Style="{StaticResource SectionTitle}" Margin="{DynamicResource SettingsSectionMargin}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{DynamicResource SettingsCompactLabelColumn}"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="{l:Str Settings.Login}" Style="{StaticResource RowLabel}"/>
+                    <CheckBox x:Name="AutostartBox" Grid.Column="1" Content="{l:Str Settings.Autostart}"
+                              Margin="{DynamicResource SettingsCompactRowMargin}"/>
+
+                    <TextBlock Grid.Row="1" Text="{l:Str Settings.CloseWindow}" Style="{StaticResource RowLabel}"/>
+                    <Button x:Name="CloseButton" Grid.Row="1" Grid.Column="1" Style="{StaticResource PopupButton}"
+                            Width="{DynamicResource SettingsChoiceWidth}" HorizontalAlignment="Left"
+                            Margin="{DynamicResource SettingsCompactRowMargin}"/>
+
+                    <TextBlock Grid.Row="2" Text="{l:Str Settings.OnStart}" Style="{StaticResource RowLabel}"/>
+                    <CheckBox x:Name="ResumeBox" Grid.Row="2" Grid.Column="1" Content="{l:Str Settings.Resume}"
+                              Margin="{DynamicResource SettingsCompactRowMargin}"
+                              ToolTip="{l:Str Settings.ResumeTip}"/>
+
+                    <TextBlock Grid.Row="3" Text="{l:Str Settings.Power}" Style="{StaticResource RowLabel}"/>
+                    <CheckBox x:Name="KeepAwakeBox" Grid.Row="3" Grid.Column="1" Content="{l:Str Settings.KeepAwake}"
+                              Margin="{DynamicResource SettingsCompactRowMargin}"
+                              ToolTip="{l:Str Settings.KeepAwakeTip}"/>
+
+                    <!-- Regeln „Automatisch abwählen“: eine Zeile je Regel, Schreibweise wie im Filterfeld des Hinzufügen-Dialogs -->
+                    <TextBlock Grid.Row="4" Text="{l:Str Settings.AutoDeselect}" Style="{StaticResource RowLabel}" VerticalAlignment="Top"/>
+                    <StackPanel Grid.Row="4" Grid.Column="1" Margin="{DynamicResource SettingsCompactRowMargin}">
+                        <TextBox x:Name="RulesBox" AcceptsReturn="True" TextWrapping="NoWrap" VerticalContentAlignment="Top"
+                                 Height="{DynamicResource RulesBoxHeight}" VerticalScrollBarVisibility="Auto"
+                                 Tag="{l:Str Settings.AutoDeselectHint}"/>
+                        <TextBlock Text="{l:Str Settings.AutoDeselectNote}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"
+                                   Margin="{DynamicResource GapTopS}"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="5" Text="{l:Str Settings.Data}" Style="{StaticResource RowLabel}" VerticalAlignment="Top"/>
+                    <StackPanel Grid.Row="5" Grid.Column="1" Margin="{DynamicResource SettingsCompactRowMargin}">
+                        <CheckBox x:Name="PortableBox" Content="{l:Str Settings.Portable}"
+                                  ToolTip="{l:Str Settings.PortableTip}"/>
+                        <TextBlock x:Name="DataDirText" Style="{StaticResource SecondaryText}" Margin="{DynamicResource GapTopS}"/>
+                    </StackPanel>
+
+                    <!-- Auto-Entpacken: 7-Zip wird erst beim ersten Entpacken gesucht, der Pfad hier hat Vorrang -->
+                    <TextBlock Grid.Row="6" Text="{l:Str Settings.Extract}" Style="{StaticResource RowLabel}" VerticalAlignment="Top"/>
+                    <StackPanel Grid.Row="6" Grid.Column="1" Margin="{DynamicResource SettingsCompactRowMargin}">
+                        <CheckBox x:Name="AutoExtractBox" Content="{l:Str Settings.AutoExtract}"
+                                  ToolTip="{l:Str Settings.AutoExtractTip}"/>
+                        <TextBox x:Name="SevenZipBox" Margin="{DynamicResource GapTopS}" Tag="{l:Str Settings.SevenZipHint}"/>
+                    </StackPanel>
+
+                    <!-- Passwortliste für geschützte Archive: ein Passwort je Zeile, in settings.json nur verschlüsselt -->
+                    <TextBlock Grid.Row="7" Text="{l:Str Settings.ArchivePasswords}" Style="{StaticResource RowLabel}" VerticalAlignment="Top"/>
+                    <StackPanel Grid.Row="7" Grid.Column="1" Margin="{DynamicResource SettingsCompactRowMargin}">
+                        <TextBox x:Name="PasswordsBox" AcceptsReturn="True" TextWrapping="NoWrap" VerticalContentAlignment="Top"
+                                 Height="{DynamicResource RulesBoxHeight}" VerticalScrollBarVisibility="Auto"
+                                 Tag="{l:Str Settings.ArchivePasswordsHint}"/>
+                        <TextBlock x:Name="PasswordsNote" Text="{l:Str Settings.ArchivePasswordsNote}" Style="{StaticResource SecondaryText}"
+                                   TextWrapping="Wrap" Margin="{DynamicResource GapTopS}"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Dienste: Debrid, Hosts, Browser. Die Knöpfe öffnen ihr Sheet und schließen dieses (nicht übernommene
+                     Änderungen hier gehen dabei verloren). Click'n'Load ist aus, solange der Nutzer es nicht einschaltet; sein
+                     Status steht nur da, wenn er etwas zu sagen hat. -->
+                <TextBlock Text="{l:Str Settings.Section.Services}" Style="{StaticResource SectionTitle}" Margin="{DynamicResource SettingsSectionMargin}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{DynamicResource SettingsCompactLabelColumn}"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="{l:Str Settings.Configure}" Style="{StaticResource RowLabel}"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="{DynamicResource SettingsCompactRowMargin}">
+                        <Button Style="{StaticResource PushButton}" Content="{l:Str Settings.DebridButton}"
+                                ToolTip="{l:Str Settings.DebridTip}" Click="Debrid_Click"/>
+                        <Button Style="{StaticResource PushButton}" Content="{l:Str Settings.HostsButton}" Margin="{DynamicResource GapLeft}"
+                                ToolTip="{l:Str Settings.HostsTip}" Click="Hosts_Click"/>
+                        <Button Style="{StaticResource PushButton}" Content="{l:Str Settings.BrowserButton}" Margin="{DynamicResource GapLeft}"
+                                ToolTip="{l:Str Settings.BrowserTip}" Click="Browser_Click"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="1" Text="{l:Str Settings.ClickNLoad}" Style="{StaticResource RowLabel}" VerticalAlignment="Top"/>
+                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="{DynamicResource SettingsCompactRowMargin}">
+                        <CheckBox x:Name="ClickNLoadBox" Content="{l:Str Settings.ClickNLoadBox}"
+                                  ToolTip="{l:Str Settings.ClickNLoadTip}"/>
+                        <TextBlock x:Name="ClickNLoadStatus" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"
+                                   Margin="{DynamicResource GapTopS}" Visibility="Collapsed"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="2" Text="{l:Str Settings.Clipboard}" Style="{StaticResource RowLabel}" VerticalAlignment="Top"/>
+                    <CheckBox x:Name="ClipboardBox" Grid.Row="2" Grid.Column="1" Content="{l:Str Settings.ClipboardBox}"
+                              Margin="{DynamicResource SettingsCompactRowMargin}" ToolTip="{l:Str Settings.ClipboardTip}"/>
+                </Grid>
+
+                <!-- Der Hinweis steht unter dem Namen in der sonst leeren Beschriftungsspalte, das spart eine Zeile. -->
+                <TextBlock Text="{l:Str Settings.Section.Notifications}" Style="{StaticResource SectionTitle}" Margin="{DynamicResource SettingsSectionMargin}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{DynamicResource SettingsCompactLabelColumn}"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="1">
+                        <CheckBox x:Name="NotifyCompletedBox" Content="{l:Str Settings.NotifyCompleted}"
+                                  Margin="{DynamicResource SettingsCompactRowMargin}"/>
+                        <CheckBox x:Name="NotifyFailedBox" Content="{l:Str Settings.NotifyFailed}"
+                                  Margin="{DynamicResource SettingsCompactRowMargin}"/>
+                        <CheckBox x:Name="NotifyAllDoneBox" Content="{l:Str Settings.NotifyAllDone}"
+                                  Margin="{DynamicResource SettingsCompactRowMargin}"/>
+                    </StackPanel>
+                    <StackPanel Margin="{DynamicResource SettingsNoteMargin}">
+                        <TextBlock Text="{l:Str Settings.Notify}"/>
+                        <TextBlock Style="{StaticResource SecondaryText}" TextWrapping="Wrap" Margin="{DynamicResource GapTopS}"
+                                   Text="{l:Str Settings.NotifyHint}"/>
+                    </StackPanel>
+                </Grid>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <TextBlock x:Name="ErrorText" Grid.Row="2" Style="{StaticResource SecondaryText}" Foreground="{DynamicResource TextError}"
+                   Margin="{DynamicResource GapTop}" TextWrapping="Wrap" Visibility="Collapsed"/>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="{DynamicResource GapTopL}">
+            <Button Content="{l:Str Common.Cancel}" Style="{StaticResource PushButton}" IsCancel="True" Click="Cancel_Click"/>
+            <Button x:Name="SaveButton" Content="{l:Str Common.Apply}" Style="{StaticResource AccentButton}" IsDefault="True"
+                    Margin="{DynamicResource GapLeft}" Click="Save_Click"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

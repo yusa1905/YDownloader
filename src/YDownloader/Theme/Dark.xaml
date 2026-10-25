@@ -1,0 +1,67 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Flächen -->
+    <SolidColorBrush x:Key="WindowBackground" Color="#1E1E20"/>
+    <SolidColorBrush x:Key="TitleBarBackground" Color="#2A2A2D"/>
+    <SolidColorBrush x:Key="SidebarBackground" Color="#252527"/>
+    <SolidColorBrush x:Key="BorderBrush" Color="#3A3A3D"/>
+    <SolidColorBrush x:Key="SeparatorBrush" Color="#38383A"/>
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="TextPrimary" Color="#F2F2F7"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#98989F"/>
+    <SolidColorBrush x:Key="TextTertiary" Color="#8A8A8F"/>
+    <SolidColorBrush x:Key="TextDisabled" Color="#636366"/>
+
+    <!-- Akzent und Zustände -->
+    <SolidColorBrush x:Key="Accent" Color="#0A84FF"/>
+    <SolidColorBrush x:Key="AccentHover" Color="#3395FF"/>
+    <SolidColorBrush x:Key="AccentText" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="AccentSoft" Color="#330A84FF"/>
+    <SolidColorBrush x:Key="Success" Color="#32D74B"/>
+    <SolidColorBrush x:Key="Warning" Color="#FFB340"/>
+    <SolidColorBrush x:Key="Error" Color="#FF453A"/>
+    <SolidColorBrush x:Key="TextWarning" Color="#FFB340"/>
+    <SolidColorBrush x:Key="TextSuccess" Color="#32D74B"/>
+    <SolidColorBrush x:Key="TextError" Color="#FF453A"/>
+
+    <!-- Liste -->
+    <SolidColorBrush x:Key="RowHover" Color="#0AFFFFFF"/>
+    <SolidColorBrush x:Key="RowSelected" Color="#400A84FF"/>
+    <SolidColorBrush x:Key="RowSelectedInactive" Color="#2EFFFFFF"/>
+    <SolidColorBrush x:Key="BadgeBackground" Color="#3A3A3C"/>
+    <SolidColorBrush x:Key="BadgeText" Color="#AEAEB2"/>
+    <SolidColorBrush x:Key="BarTrack" Color="#3A3A3C"/>
+    <SolidColorBrush x:Key="BarPaused" Color="#636366"/>
+
+    <!-- Bedienelemente -->
+    <SolidColorBrush x:Key="ControlBackground" Color="#3A3A3C"/>
+    <SolidColorBrush x:Key="ControlBorder" Color="#48484A"/>
+    <SolidColorBrush x:Key="ControlHover" Color="#1AFFFFFF"/>
+    <SolidColorBrush x:Key="ControlPressed" Color="#2BFFFFFF"/>
+    <SolidColorBrush x:Key="InputBackground" Color="#2C2C2E"/>
+    <SolidColorBrush x:Key="FocusRing" Color="#CC0A84FF"/>
+    <SolidColorBrush x:Key="ScrollThumb" Color="#40FFFFFF"/>
+    <SolidColorBrush x:Key="ScrollThumbHover" Color="#73FFFFFF"/>
+
+    <!-- Menüs, Sheets -->
+    <SolidColorBrush x:Key="MenuBackground" Color="#2C2C2E"/>
+    <SolidColorBrush x:Key="SheetBackground" Color="#2C2C2E"/>
+    <SolidColorBrush x:Key="Backdrop" Color="#59000000"/>
+    <Color x:Key="ShadowColor">#000000</Color>
+
+    <!-- Graph -->
+    <SolidColorBrush x:Key="GraphStroke" Color="#0A84FF"/>
+    <SolidColorBrush x:Key="GraphFill" Color="#400A84FF"/>
+
+    <!-- Ampel -->
+    <SolidColorBrush x:Key="LightClose" Color="#FF5F57"/>
+    <SolidColorBrush x:Key="LightMinimize" Color="#FEBC2E"/>
+    <SolidColorBrush x:Key="LightZoom" Color="#28C840"/>
+    <SolidColorBrush x:Key="LightInactive" Color="#4A4A4D"/>
+    <SolidColorBrush x:Key="LightGlyphClose" Color="#B34D0000"/>
+    <SolidColorBrush x:Key="LightGlyphMinimize" Color="#B3995700"/>
+    <SolidColorBrush x:Key="LightGlyphZoom" Color="#B3006500"/>
+    <SolidColorBrush x:Key="LightPressed" Color="#33000000"/>
+</ResourceDictionary>

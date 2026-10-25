@@ -1,0 +1,12 @@
+{
+  "extName": { "message": "YDownloader" },
+  "extDescription": { "message": "Schickt Links aus dem Browser an die App YDownloader (Rechtsklick)." },
+  "menuDownload": { "message": "Mit YDownloader laden" },
+  "actionTitle": { "message": "YDownloader: Klick prüft die Verbindung" },
+  "pingRunning": { "message": "Verbunden, YDownloader $1 läuft", "placeholders": { "1": { "content": "$1" } } },
+  "pingIdle": { "message": "Verbunden, YDownloader $1 startet beim nächsten Link", "placeholders": { "1": { "content": "$1" } } },
+  "errNoHost": { "message": "YDownloader ist mit diesem Browser nicht verbunden. In YDownloader in der Seitenleiste „Browser verbinden …“ wählen." },
+  "errNoLink": { "message": "Hier ist kein Download-Link." },
+  "errUnreachable": { "message": "YDownloader ist nicht gestartet oder hat nicht geantwortet." },
+  "errGeneric": { "message": "Der Link konnte nicht an YDownloader übergeben werden." }
+}

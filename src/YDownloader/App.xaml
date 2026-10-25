@@ -1,0 +1,17 @@
+<Application x:Class="YDownloader.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnMainWindowClose">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Theme/Metrics.xaml"/>
+                <ResourceDictionary Source="Theme/Icons.xaml"/>
+                <ResourceDictionary Source="Theme/Light.xaml"/>
+                <ResourceDictionary Source="Theme/Controls.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <!-- Skalierung für Fenster, Menüs und Tooltips. Unveränderlich: App.ApplyAppearance tauscht sie aus. -->
+            <ScaleTransform x:Key="UiScaleTransform" ScaleX="1" ScaleY="1"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

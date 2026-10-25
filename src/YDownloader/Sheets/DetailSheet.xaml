@@ -1,0 +1,295 @@
+<UserControl x:Class="YDownloader.Sheets.DetailSheet"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:YDownloader.Controls"
+             xmlns:d="clr-namespace:YDownloader.Downloads"
+             xmlns:l="clr-namespace:YDownloader"
+             Width="{DynamicResource SheetWidthWide}">
+
+    <UserControl.Resources>
+        <Style x:Key="DetailLabel" TargetType="TextBlock" BasedOn="{StaticResource SecondaryText}">
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Margin" Value="{DynamicResource DetailLabelMargin}"/>
+        </Style>
+
+        <Style x:Key="DetailValue" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="{DynamicResource DetailRowMargin}"/>
+            <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+        </Style>
+
+        <Style x:Key="DetailBox" TargetType="TextBox" BasedOn="{StaticResource SelectableText}">
+            <Setter Property="Margin" Value="{DynamicResource DetailBoxMargin}"/>
+        </Style>
+
+        <!-- Eine Verbindung: Nummer, Bereich, Fortschritt, Tempo und ein eigener Graph -->
+        <DataTemplate x:Key="ConnectionTemplate" DataType="{x:Type d:ConnectionInfo}">
+            <Grid Margin="{DynamicResource ConnRowMargin}" Background="Transparent">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="{DynamicResource ConnNameColumn}"/>
+                    <ColumnDefinition Width="{DynamicResource ConnRangeColumn}"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="{DynamicResource ConnPercentColumn}"/>
+                    <ColumnDefinition Width="{DynamicResource ConnSpeedColumn}"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Name}" Style="{StaticResource SecondaryText}" VerticalAlignment="Center"
+                           Typography.NumeralAlignment="Tabular"/>
+                <TextBlock Grid.Column="1" Text="{Binding RangeText}" ToolTip="{Binding RangeTip}" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular"/>
+                <c:SegmentBar x:Name="Bar" Grid.Column="2" Height="{DynamicResource BarHeight}" VerticalAlignment="Center"
+                              Margin="{DynamicResource GapRight}" Fraction="{Binding Fraction}"
+                              Fill="{DynamicResource Accent}" Track="{DynamicResource BarTrack}"
+                              ToolTip="{Binding DoneText}"/>
+                <TextBlock Grid.Column="3" Text="{Binding PercentText}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                           Style="{StaticResource SecondaryText}" Typography.NumeralAlignment="Tabular"/>
+                <TextBlock Grid.Column="4" Text="{Binding SpeedText}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                           Typography.NumeralAlignment="Tabular"/>
+                <c:SpeedGraph Grid.Column="5" Width="{DynamicResource ConnGraphWidth}" Height="{DynamicResource ConnGraphHeight}"
+                              Margin="{DynamicResource GapLeft}" VerticalAlignment="Center" History="{Binding History}"
+                              Stroke="{DynamicResource GraphStroke}" Fill="{DynamicResource GraphFill}"
+                              Step="{DynamicResource ConnGraphStep}"
+                              ToolTip="{l:Str Detail.ConnGraphTip}"/>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsDone}" Value="True">
+                    <Setter TargetName="Bar" Property="Fill" Value="{DynamicResource Success}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- Eine Verbindung eines fertigen Downloads: Nummer, Bereich, Größe mit Zeit und durchschnittliches Tempo -->
+        <DataTemplate x:Key="SummaryTemplate" DataType="{x:Type d:ConnectionSummary}">
+            <Grid Margin="{DynamicResource ConnRowMargin}" Background="Transparent">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="{DynamicResource ConnNameColumn}"/>
+                    <ColumnDefinition Width="{DynamicResource ConnRangeColumn}"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Name}" Style="{StaticResource SecondaryText}" VerticalAlignment="Center"
+                           Typography.NumeralAlignment="Tabular"/>
+                <TextBlock Grid.Column="1" Text="{Binding RangeText}" ToolTip="{Binding RangeTip}" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular"/>
+                <TextBlock Grid.Column="2" Text="{Binding DoneText}" Style="{StaticResource SecondaryText}" VerticalAlignment="Center"
+                           Typography.NumeralAlignment="Tabular"/>
+                <TextBlock Grid.Column="3" Text="{Binding SpeedText}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                           ToolTip="{l:Str Detail.AvgSpeedTip}" Typography.NumeralAlignment="Tabular"/>
+            </Grid>
+        </DataTemplate>
+
+        <!-- Ein Eintrag im Verlauf: Uhrzeit und Text -->
+        <DataTemplate x:Key="LogTemplate" DataType="{x:Type d:HistoryEntry}">
+            <Grid Margin="{DynamicResource ConnRowMargin}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="{DynamicResource LogTimeColumn}"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding TimeText}" Style="{StaticResource SecondaryText}" Typography.NumeralAlignment="Tabular"/>
+                <TextBlock x:Name="Message" Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap"/>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Fatal}" Value="True">
+                    <Setter TargetName="Message" Property="Foreground" Value="{DynamicResource TextError}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <!-- Die Angaben scrollen, wenn das Fenster niedrig ist: Kopfzeile (mit feiner Linie) und Knopf bleiben immer sichtbar,
+         der Inhalt wird unter der Linie abgeschnitten. -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="{DynamicResource SeparatorBottom}"
+                Padding="{DynamicResource DetailHeaderPadding}">
+        <StackPanel>
+            <TextBlock Text="{Binding FileName}" Style="{StaticResource SheetTitle}" TextTrimming="CharacterEllipsis"/>
+            <TextBlock Text="{Binding StatusText}" Margin="{DynamicResource GapTopS}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource SecondaryText}">
+                        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsFailed}" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource TextError}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </StackPanel>
+        </Border>
+
+        <ScrollViewer x:Name="Scroll" Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="{DynamicResource SettingsScrollPadding}">
+
+                <!-- Kopf -->
+                <TextBlock Text="{l:Str Detail.Section.File}" Style="{StaticResource SectionTitle}" Margin="{DynamicResource SectionGapDetailFirst}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{DynamicResource DetailLabelColumn}"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="{l:Str Detail.Link}" Style="{StaticResource DetailLabel}"/>
+                    <TextBox Grid.Column="1" Text="{Binding Url, Mode=OneWay}" Style="{StaticResource DetailBox}"
+                             PreviewMouseWheel="Text_PreviewMouseWheel"/>
+
+                    <TextBlock Grid.Row="1" Text="{l:Str Detail.FinalUrl}" Style="{StaticResource DetailLabel}"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FinalUrlText, Mode=OneWay}" Style="{StaticResource DetailBox}"
+                             PreviewMouseWheel="Text_PreviewMouseWheel"/>
+
+                    <TextBlock Grid.Row="2" Text="{l:Str Detail.Server}" Style="{StaticResource DetailLabel}"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ServerText}" Style="{StaticResource DetailValue}"/>
+
+                    <TextBlock Grid.Row="3" Text="{l:Str Detail.Target}" Style="{StaticResource DetailLabel}"/>
+                    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding TargetText, Mode=OneWay}" Style="{StaticResource DetailBox}"
+                             PreviewMouseWheel="Text_PreviewMouseWheel"/>
+
+                    <TextBlock Grid.Row="4" Text="{l:Str Detail.Size}" Style="{StaticResource DetailLabel}"/>
+                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SizeText}" Style="{StaticResource DetailValue}"/>
+
+                    <TextBlock Grid.Row="5" Text="{l:Str Detail.Resume}" Style="{StaticResource DetailLabel}"/>
+                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding ResumeText}" Style="{StaticResource DetailValue}"/>
+                </Grid>
+
+                <!-- Live: jede Verbindung einzeln -->
+                <Grid Margin="{DynamicResource GapTop}">
+                    <TextBlock Text="{l:Str Detail.Section.Connections}" Style="{StaticResource SectionTitle}" Margin="{DynamicResource SectionGapDetail}"/>
+                    <TextBlock Text="{Binding LiveText}" Style="{StaticResource SecondaryText}" HorizontalAlignment="Right"
+                               VerticalAlignment="Bottom" Margin="{DynamicResource DetailTempoMargin}" Typography.NumeralAlignment="Tabular"/>
+                </Grid>
+                <ItemsControl ItemsSource="{Binding Connections}" ItemTemplate="{StaticResource ConnectionTemplate}"
+                              Focusable="False" IsTabStop="False">
+                    <ItemsControl.Style>
+                        <Style TargetType="ItemsControl">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasConnections}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ItemsControl.Style>
+                </ItemsControl>
+                <ItemsControl ItemsSource="{Binding Summaries}" ItemTemplate="{StaticResource SummaryTemplate}"
+                              Focusable="False" IsTabStop="False">
+                    <ItemsControl.Style>
+                        <Style TargetType="ItemsControl">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasSummary}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ItemsControl.Style>
+                </ItemsControl>
+                <TextBlock Text="{Binding ConnectionsHint}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource SecondaryText}">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ShowHint}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <!-- Verlauf -->
+                <TextBlock Text="{l:Str Detail.Section.History}" Style="{StaticResource SectionTitle}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{DynamicResource DetailLabelColumn}"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="{l:Str Detail.Start}" Style="{StaticResource DetailLabel}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding StartText}" Style="{StaticResource DetailValue}"/>
+
+                    <TextBlock Grid.Row="1" Text="{l:Str Detail.End}" Style="{StaticResource DetailLabel}"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding EndText}" Style="{StaticResource DetailValue}"/>
+
+                    <TextBlock Grid.Row="2" Text="{l:Str Detail.Duration}" Style="{StaticResource DetailLabel}"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DurationText}" Style="{StaticResource DetailValue}"
+                               ToolTip="{l:Str Detail.DurationTip}"/>
+
+                    <TextBlock Grid.Row="3" Text="{l:Str Detail.Average}" Style="{StaticResource DetailLabel}"/>
+                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AverageText}" Style="{StaticResource DetailValue}"
+                               ToolTip="{l:Str Detail.AverageTip}"/>
+
+                    <TextBlock Grid.Row="4" Text="{l:Str Detail.Retries}" Style="{StaticResource DetailLabel}"/>
+                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding RetriesText}" Style="{StaticResource DetailValue}"/>
+
+                    <TextBlock Grid.Row="5" Text="{l:Str Detail.Checksum}" Style="{StaticResource DetailLabel}"/>
+                    <StackPanel Grid.Row="5" Grid.Column="1">
+                        <TextBlock Text="{Binding ChecksumResultText}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DetailValue}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ChecksumFailed}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextError}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBox Text="{Binding ChecksumValueText, Mode=OneWay}" Style="{StaticResource DetailBox}"
+                                 FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource TextSecondary}"
+                                 PreviewMouseWheel="Text_PreviewMouseWheel"/>
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock Text="{l:Str Detail.Section.Log}" Style="{StaticResource SectionTitle}" Margin="{DynamicResource SectionGapDetail}"/>
+                <ItemsControl ItemsSource="{Binding Log}" ItemTemplate="{StaticResource LogTemplate}"
+                              Focusable="False" IsTabStop="False">
+                    <ItemsControl.Style>
+                        <Style TargetType="ItemsControl">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasLog}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ItemsControl.Style>
+                </ItemsControl>
+                <TextBlock Text="{l:Str Detail.LogEmpty}" Margin="{DynamicResource LogEmptyMargin}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource SecondaryText}">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasLog}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Button x:Name="CloseButton" Grid.Row="2" Content="{l:Str Common.Close}" Style="{StaticResource AccentButton}"
+                HorizontalAlignment="Right" Margin="{DynamicResource GapTopL}" IsDefault="True" IsCancel="True"
+                Click="Close_Click"/>
+    </Grid>
+</UserControl>

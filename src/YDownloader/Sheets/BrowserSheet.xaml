@@ -1,0 +1,79 @@
+<UserControl x:Class="YDownloader.Sheets.BrowserSheet"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:YDownloader"
+             Width="{DynamicResource SheetWidthWide}">
+
+    <UserControl.Resources>
+        <Style x:Key="RowLabel" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="{DynamicResource SettingsCompactRowMargin}"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="{l:Str Browser.Title}" Style="{StaticResource SheetTitle}"/>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="{DynamicResource SettingsScrollPadding}">
+                <TextBlock Text="{l:Str Browser.Intro}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"
+                           Margin="{DynamicResource GapTopS}"/>
+
+                <TextBlock Text="{l:Str Browser.Step1}" Style="{StaticResource SectionTitle}" Margin="{DynamicResource SettingsSectionMargin}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{DynamicResource SettingsCompactLabelColumn}"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Chrome" Style="{StaticResource RowLabel}"/>
+                    <TextBlock x:Name="ChromeState" Grid.Column="1" Style="{StaticResource RowLabel}"/>
+                    <Button x:Name="ChromeButton" Grid.Column="2" Style="{StaticResource PushButton}"
+                            Margin="{DynamicResource SettingsCompactRowMargin}" Click="Chrome_Click"/>
+
+                    <TextBlock Grid.Row="1" Text="Firefox" Style="{StaticResource RowLabel}"/>
+                    <TextBlock x:Name="FirefoxState" Grid.Row="1" Grid.Column="1" Style="{StaticResource RowLabel}"/>
+                    <Button x:Name="FirefoxButton" Grid.Row="1" Grid.Column="2" Style="{StaticResource PushButton}"
+                            Margin="{DynamicResource SettingsCompactRowMargin}" Click="Firefox_Click"/>
+                </Grid>
+                <TextBlock Text="{l:Str Browser.Step1Hint}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"/>
+
+                <TextBlock Text="{l:Str Browser.Step2}" Style="{StaticResource SectionTitle}" Margin="{DynamicResource SettingsSectionMargin}"/>
+                <TextBox x:Name="FolderText" Style="{StaticResource SelectableText}"
+                         Margin="{DynamicResource BoxInset}"/>
+                <StackPanel Orientation="Horizontal" Margin="{DynamicResource GapTop}">
+                    <Button Content="{l:Str Browser.OpenFolder}" Style="{StaticResource PushButton}" Click="OpenFolder_Click"/>
+                    <Button Content="{l:Str Browser.CopyPath}" Style="{StaticResource PushButton}"
+                            Margin="{DynamicResource GapLeft}" Click="CopyPath_Click"/>
+                </StackPanel>
+                <TextBlock Text="{l:Str Browser.HowChrome}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"
+                           Margin="{DynamicResource GapTop}"/>
+                <TextBlock Text="{l:Str Browser.HowFirefox}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"
+                           Margin="{DynamicResource GapTopS}"/>
+
+                <TextBlock Text="{l:Str Browser.Step3}" Style="{StaticResource SectionTitle}" Margin="{DynamicResource SettingsSectionMargin}"/>
+                <TextBlock Text="{l:Str Browser.Step3Text}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <TextBlock x:Name="ErrorText" Grid.Row="2" Style="{StaticResource SecondaryText}" Foreground="{DynamicResource TextError}"
+                   Margin="{DynamicResource GapTop}" TextWrapping="Wrap" Visibility="Collapsed"/>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="{DynamicResource GapTopL}">
+            <Button x:Name="CloseButton" Content="{l:Str Common.Close}" Style="{StaticResource AccentButton}"
+                    IsDefault="True" IsCancel="True" Click="Close_Click"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -1,0 +1,90 @@
+<UserControl x:Class="YDownloader.Sheets.QueuesSheet"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="clr-namespace:YDownloader.Sheets"
+             xmlns:l="clr-namespace:YDownloader"
+             Width="{DynamicResource SheetWidthWide}">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+
+        <DataTemplate x:Key="RowTemplate" DataType="{x:Type s:QueueRow}">
+            <StackPanel Margin="{DynamicResource QueueRowMargin}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                        <ColumnDefinition Width="{DynamicResource QueueLimitColumn}"/>
+                        <ColumnDefinition Width="{DynamicResource HostButtonColumn}"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="{l:Str Queues.NameHint}"/>
+                    <TextBox Grid.Column="2" Text="{Binding Concurrent, UpdateSourceTrigger=PropertyChanged}" Tag="{l:Str Hosts.HintDefault}"
+                             ToolTip="{l:Str Queues.ConcurrentTip}"/>
+                    <Button Grid.Column="3" Style="{StaticResource IconButton}" Content="{DynamicResource IconDelete}"
+                            HorizontalAlignment="Right" ToolTip="{l:Str Queues.DeleteTip}" Click="DeleteRow_Click"/>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Margin="{DynamicResource GapTopS}">
+                    <CheckBox Content="{l:Str Queues.Schedule}" IsChecked="{Binding HasSchedule}" VerticalAlignment="Center"
+                              Margin="{DynamicResource GapRight}"/>
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding HasSchedule, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="{l:Str Queues.From}" Style="{StaticResource SecondaryText}" VerticalAlignment="Center"
+                                   Margin="{DynamicResource GapRight}"/>
+                        <TextBox Width="{DynamicResource QueueTimeWidth}" Text="{Binding Start, UpdateSourceTrigger=PropertyChanged}"
+                                 Tag="02:00"/>
+                        <TextBlock Text="{l:Str Queues.To}" Style="{StaticResource SecondaryText}" VerticalAlignment="Center"
+                                   Margin="{DynamicResource QueueLabelMargin}"/>
+                        <TextBox Width="{DynamicResource QueueTimeWidth}" Text="{Binding Stop, UpdateSourceTrigger=PropertyChanged}"
+                                 Tag="{l:Str Queues.HintOpen}" ToolTip="{l:Str Queues.StopTip}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="{DynamicResource GapTopS}"
+                            Visibility="{Binding HasSchedule, Converter={StaticResource BoolToVisibility}}">
+                    <CheckBox Content="{l:Str Day.Mon}" IsChecked="{Binding Mon}" Margin="{DynamicResource QueueDayMargin}"/>
+                    <CheckBox Content="{l:Str Day.Tue}" IsChecked="{Binding Tue}" Margin="{DynamicResource QueueDayMargin}"/>
+                    <CheckBox Content="{l:Str Day.Wed}" IsChecked="{Binding Wed}" Margin="{DynamicResource QueueDayMargin}"/>
+                    <CheckBox Content="{l:Str Day.Thu}" IsChecked="{Binding Thu}" Margin="{DynamicResource QueueDayMargin}"/>
+                    <CheckBox Content="{l:Str Day.Fri}" IsChecked="{Binding Fri}" Margin="{DynamicResource QueueDayMargin}"/>
+                    <CheckBox Content="{l:Str Day.Sat}" IsChecked="{Binding Sat}" Margin="{DynamicResource QueueDayMargin}"/>
+                    <CheckBox Content="{l:Str Day.Sun}" IsChecked="{Binding Sun}" Margin="{DynamicResource QueueDayMargin}"/>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <TextBlock Text="{l:Str Queues.Title}" Style="{StaticResource SheetTitle}"/>
+        <TextBlock Style="{StaticResource SecondaryText}" Margin="{DynamicResource GapTopS}" TextWrapping="Wrap"
+                   Text="{l:Str Queues.Intro}"/>
+
+        <Grid Margin="{DynamicResource FieldLabelTopMargin}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                <ColumnDefinition Width="{DynamicResource QueueLimitColumn}"/>
+                <ColumnDefinition Width="{DynamicResource HostButtonColumn}"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{l:Str Categories.Name}" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="2" Text="{l:Str Queues.ColConcurrent}" Style="{StaticResource FieldLabel}"/>
+        </Grid>
+
+        <ScrollViewer MaxHeight="{DynamicResource QueueRowsMaxHeight}" VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="Rows" ItemTemplate="{StaticResource RowTemplate}" Focusable="False"/>
+        </ScrollViewer>
+        <TextBlock x:Name="EmptyText" Style="{StaticResource SecondaryText}" Foreground="{DynamicResource TextTertiary}"
+                   Text="{l:Str Queues.Empty}" Margin="{DynamicResource GapTopS}"/>
+
+        <Button Style="{StaticResource PushButton}" Content="{l:Str Queues.AddRow}" HorizontalAlignment="Left"
+                Margin="{DynamicResource GapTopS}" Click="AddRow_Click"/>
+
+        <TextBlock x:Name="ErrorText" Style="{StaticResource SecondaryText}" Foreground="{DynamicResource TextError}"
+                   Margin="{DynamicResource GapTop}" TextWrapping="Wrap" Visibility="Collapsed"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="{DynamicResource GapTopL}">
+            <Button Content="{l:Str Common.Cancel}" Style="{StaticResource PushButton}" IsCancel="True" Click="Cancel_Click"/>
+            <Button Content="{l:Str Common.Apply}" Style="{StaticResource AccentButton}" IsDefault="True"
+                    Margin="{DynamicResource GapLeft}" Click="Save_Click"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

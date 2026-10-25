@@ -1,0 +1,211 @@
+﻿<UserControl x:Class="YDownloader.Sheets.AddSheet"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="clr-namespace:YDownloader.Sheets"
+             xmlns:l="clr-namespace:YDownloader"
+             Width="{DynamicResource SheetWidthWide}">
+
+    <UserControl.Resources>
+        <!-- Kopfzeile eines Pakets: Name und Ordner änderbar, das Häkchen wählt alle Teile -->
+        <DataTemplate DataType="{x:Type s:PackageHeader}">
+            <Grid Margin="{DynamicResource PackageHeaderMargin}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                    <ColumnDefinition Width="{DynamicResource SmallBadgeColumn}"/>
+                    <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <CheckBox IsChecked="{Binding IsChecked}" IsThreeState="True" VerticalAlignment="Top"
+                          Margin="{DynamicResource PackageCheckMargin}" Focusable="False"/>
+                <Border Grid.Column="2" Width="{DynamicResource SmallBadgeWidth}" Height="{DynamicResource SmallBadgeHeight}"
+                        CornerRadius="{DynamicResource SmallCorner}" Background="{DynamicResource AccentSoft}" VerticalAlignment="Top">
+                    <TextBlock Text="{Binding Badge}" FontSize="{DynamicResource FontSizeBadgeSmall}" FontWeight="SemiBold"
+                               Foreground="{DynamicResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                               Margin="{DynamicResource SmallBadgeTextMargin}"/>
+                </Border>
+                <StackPanel Grid.Column="4">
+                    <!-- Name und Ordner nebeneinander: der Kopf braucht eine Eingabezeile weniger -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="{DynamicResource FieldGap}"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="{l:Str Package.NameHint}"
+                                 ToolTip="{l:Str Package.NameTip}"/>
+                        <TextBox Grid.Column="2" Text="{Binding FolderText, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="{l:Str Package.FolderTip}"/>
+                    </Grid>
+                    <TextBlock x:Name="Summary" Text="{Binding Summary}" Style="{StaticResource SecondaryText}"
+                               Margin="{DynamicResource GapTopS}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Tone}" Value="{x:Static s:Tone.Warning}">
+                    <Setter TargetName="Summary" Property="Foreground" Value="{DynamicResource TextWarning}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Tone}" Value="{x:Static s:Tone.Error}">
+                    <Setter TargetName="Summary" Property="Foreground" Value="{DynamicResource TextError}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type s:AddCandidate}">
+            <Grid x:Name="Row">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                    <ColumnDefinition Width="{DynamicResource SmallBadgeColumn}"/>
+                    <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <CheckBox IsChecked="{Binding IsChecked}" VerticalAlignment="Center" Focusable="False"/>
+                <Border Grid.Column="2" Width="{DynamicResource SmallBadgeWidth}" Height="{DynamicResource SmallBadgeHeight}"
+                        CornerRadius="{DynamicResource SmallCorner}" Background="{DynamicResource BadgeBackground}">
+                    <TextBlock Text="{Binding Badge}" FontSize="{DynamicResource FontSizeBadgeSmall}" FontWeight="SemiBold"
+                               Foreground="{DynamicResource BadgeText}" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                               Margin="{DynamicResource SmallBadgeTextMargin}"/>
+                </Border>
+                <StackPanel Grid.Column="4" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="Status" Text="{Binding StatusText}" Style="{StaticResource SecondaryText}"/>
+                </StackPanel>
+                <!-- Online-Check: grün online, rot offline, gelb Passwort, grau wird geprüft -->
+                <Ellipse x:Name="Dot" Grid.Column="5" Width="{DynamicResource OnlineDotSize}" Height="{DynamicResource OnlineDotSize}"
+                         Fill="{DynamicResource TextTertiary}" VerticalAlignment="Center" Margin="{DynamicResource GapLeft}"
+                         Visibility="Collapsed"/>
+                <TextBlock Grid.Column="6" Text="{Binding SizeText}" Style="{StaticResource SecondaryText}"
+                           VerticalAlignment="Center" Margin="{DynamicResource GapLeft}" Typography.NumeralAlignment="Tabular"/>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding InPackage}" Value="True">
+                    <Setter TargetName="Row" Property="Margin" Value="{DynamicResource PackageIndent}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Check}" Value="{x:Static s:CheckStatus.Checking}">
+                    <Setter TargetName="Dot" Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Check}" Value="{x:Static s:CheckStatus.Online}">
+                    <Setter TargetName="Dot" Property="Visibility" Value="Visible"/>
+                    <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource Success}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Check}" Value="{x:Static s:CheckStatus.Offline}">
+                    <Setter TargetName="Dot" Property="Visibility" Value="Visible"/>
+                    <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource Error}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Check}" Value="{x:Static s:CheckStatus.Protected}">
+                    <Setter TargetName="Dot" Property="Visibility" Value="Visible"/>
+                    <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource Warning}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Tone}" Value="{x:Static s:Tone.Warning}">
+                    <Setter TargetName="Status" Property="Foreground" Value="{DynamicResource TextWarning}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Tone}" Value="{x:Static s:Tone.Error}">
+                    <Setter TargetName="Status" Property="Foreground" Value="{DynamicResource TextError}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <!-- Die Liste schrumpft, wenn das Fenster niedrig ist: Knöpfe bleiben immer sichtbar. -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <TextBlock Text="{l:Str Add.Title}" Style="{StaticResource SheetTitle}" VerticalAlignment="Center"/>
+            <Button Style="{StaticResource IconButton}" Content="{DynamicResource IconPaste}" HorizontalAlignment="Right"
+                    ToolTip="{l:Str Add.PasteTip}" Click="Paste_Click"/>
+        </Grid>
+
+        <TextBox x:Name="LinksBox" Grid.Row="1" Margin="{DynamicResource GapTop}" Height="{DynamicResource LinksBoxHeight}"
+                 AcceptsReturn="True" TextWrapping="NoWrap" VerticalContentAlignment="Top"
+                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                 Tag="{l:Str Add.LinksHint}"
+                 TextChanged="LinksBox_TextChanged"/>
+
+        <Grid Grid.Row="2" Margin="{DynamicResource GapTopL}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="FilterBox" Tag="{l:Str Add.FilterHint}" TextChanged="FilterBox_TextChanged"
+                     ToolTip="{l:Str Add.FilterTip}"/>
+            <TextBlock x:Name="CountText" Grid.Column="1" Style="{StaticResource SecondaryText}" VerticalAlignment="Center"
+                       Margin="{DynamicResource GapLeftL}"/>
+        </Grid>
+
+        <Border Grid.Row="3" Margin="{DynamicResource GapTop}" MaxHeight="{DynamicResource CandidatesMaxHeight}"
+                MinHeight="{DynamicResource CandidatesMinHeight}" Background="{DynamicResource InputBackground}"
+                BorderBrush="{DynamicResource ControlBorder}" BorderThickness="1" CornerRadius="{DynamicResource ControlCorner}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Border BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="{DynamicResource SeparatorBottom}"
+                        Padding="{DynamicResource ListHeaderPadding}">
+                    <CheckBox x:Name="AllBox" Content="{l:Str Common.All}" Click="AllBox_Click"/>
+                </Border>
+                <ListBox x:Name="Candidates" Grid.Row="1" Style="{StaticResource DownloadList}" Padding="{DynamicResource PadS}"
+                         SelectionMode="Single" ItemContainerStyle="{StaticResource PlainRow}"/>
+                <TextBlock x:Name="EmptyText" Grid.Row="1" Text="{l:Str Add.Empty}" Style="{StaticResource SecondaryText}"
+                           Foreground="{DynamicResource TextTertiary}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                           IsHitTestVisible="False"/>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="4" Margin="{DynamicResource FieldLabelTopMargin}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="{DynamicResource FieldGap}"/>
+                <ColumnDefinition Width="{DynamicResource CategoryPickerColumn}"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{l:Str Add.SaveIn}" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="2" Text="{l:Str Common.Category}" Style="{StaticResource FieldLabel}"/>
+        </Grid>
+        <Grid Grid.Row="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="{DynamicResource FieldGap}"/>
+                <ColumnDefinition Width="{DynamicResource CategoryPickerColumn}"/>
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="FolderBox" TextChanged="FolderBox_TextChanged"/>
+            <Button Grid.Column="1" Style="{StaticResource PushButton}" Content="{l:Str Common.BrowseFolder}" Margin="{DynamicResource GapLeft}"
+                    Click="Browse_Click"/>
+            <Button x:Name="CategoryButton" Grid.Column="3" Style="{StaticResource PopupButton}"/>
+        </Grid>
+        <StackPanel Grid.Row="6" Margin="{DynamicResource GapTop}">
+            <TextBlock x:Name="SummaryText" Style="{StaticResource SecondaryText}"/>
+            <TextBlock x:Name="DebridHint" Style="{StaticResource SecondaryText}" Foreground="{DynamicResource TextWarning}"
+                       TextWrapping="Wrap" Visibility="Collapsed" Margin="{DynamicResource GapTop}"/>
+        </StackPanel>
+
+        <Grid Grid.Row="7" Margin="{DynamicResource GapTopL}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <CheckBox x:Name="StartBox" Content="{l:Str Add.StartNow}" VerticalAlignment="Center"/>
+                <!-- Nur sichtbar, wenn es eigene Queues gibt -->
+                <StackPanel x:Name="QueuePanel" Orientation="Horizontal" Margin="{DynamicResource GapLeftL}" Visibility="Collapsed">
+                    <TextBlock Text="{l:Str Common.Queue}" Style="{StaticResource FieldLabel}" VerticalAlignment="Center"
+                               Margin="{DynamicResource GapRight}"/>
+                    <Button x:Name="QueueButton" Style="{StaticResource PopupButton}" Width="{DynamicResource SettingsChoiceWidth}"/>
+                </StackPanel>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="{l:Str Common.Cancel}" Style="{StaticResource PushButton}" IsCancel="True" Click="Cancel_Click"/>
+                <Button x:Name="AddButton" Content="{l:Str Common.Add}" Style="{StaticResource AccentButton}" IsDefault="True"
+                        Margin="{DynamicResource GapLeft}" Click="Add_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

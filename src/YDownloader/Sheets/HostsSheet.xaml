@@ -1,0 +1,80 @@
+<UserControl x:Class="YDownloader.Sheets.HostsSheet"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="clr-namespace:YDownloader.Sheets"
+             xmlns:l="clr-namespace:YDownloader"
+             Width="{DynamicResource SheetWidthWide}">
+
+    <UserControl.Resources>
+        <DataTemplate x:Key="RowTemplate" DataType="{x:Type s:HostRow}">
+            <Grid Margin="{DynamicResource CategoryRowMargin}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="{DynamicResource HostNameColumn}"/>
+                    <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                    <ColumnDefinition Width="{DynamicResource HostNumberColumn}"/>
+                    <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                    <ColumnDefinition Width="{DynamicResource HostNumberColumn}"/>
+                    <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="{DynamicResource HostButtonColumn}"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Text="{Binding Host, UpdateSourceTrigger=PropertyChanged}" Tag="example.com"/>
+                <TextBox Grid.Column="2" Text="{Binding Connections, UpdateSourceTrigger=PropertyChanged}" Tag="{l:Str Hosts.HintDefault}"/>
+                <TextBox Grid.Column="4" Text="{Binding SpeedKBps, UpdateSourceTrigger=PropertyChanged}" Tag="{l:Str Hosts.HintUnlimited}"/>
+                <TextBox Grid.Column="6" Text="{Binding UserAgent, UpdateSourceTrigger=PropertyChanged}" Tag="{l:Str Hosts.HintDefault}"/>
+                <Button Grid.Column="7" Style="{StaticResource IconButton}" Content="{DynamicResource IconDelete}"
+                        HorizontalAlignment="Right" ToolTip="{l:Str Hosts.DeleteTip}" Click="DeleteRow_Click"/>
+            </Grid>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <TextBlock Text="{l:Str Hosts.Title}" Style="{StaticResource SheetTitle}"/>
+        <TextBlock Style="{StaticResource SecondaryText}" Margin="{DynamicResource GapTopS}" TextWrapping="Wrap"
+                   Text="{l:Str Hosts.Intro}"/>
+
+        <Grid Margin="{DynamicResource FieldLabelTopMargin}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{DynamicResource SettingsLabelColumn}"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{l:Str Hosts.PerHost}" VerticalAlignment="Center"
+                       ToolTip="{l:Str Hosts.PerHostTip}"/>
+            <Button x:Name="DefaultButton" Grid.Column="1" Style="{StaticResource PopupButton}"
+                    Width="{DynamicResource SettingsChoiceWidth}" HorizontalAlignment="Left"/>
+        </Grid>
+
+        <Grid Margin="{DynamicResource FieldLabelTopMargin}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{DynamicResource HostNameColumn}"/>
+                <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                <ColumnDefinition Width="{DynamicResource HostNumberColumn}"/>
+                <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                <ColumnDefinition Width="{DynamicResource HostNumberColumn}"/>
+                <ColumnDefinition Width="{DynamicResource SmallGap}"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="{DynamicResource HostButtonColumn}"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{l:Str Hosts.ColHost}" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="2" Text="{l:Str Hosts.ColConnections}" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="4" Text="{l:Str Hosts.ColLimit}" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="6" Text="{l:Str Hosts.ColAgent}" Style="{StaticResource FieldLabel}"/>
+        </Grid>
+
+        <ScrollViewer MaxHeight="{DynamicResource CategoryRowsMaxHeight}" VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="Rows" ItemTemplate="{StaticResource RowTemplate}" Focusable="False"/>
+        </ScrollViewer>
+
+        <Button Style="{StaticResource PushButton}" Content="{l:Str Hosts.AddRow}" HorizontalAlignment="Left"
+                Margin="{DynamicResource GapTopS}" Click="AddRow_Click"/>
+
+        <TextBlock x:Name="ErrorText" Style="{StaticResource SecondaryText}" Foreground="{DynamicResource TextError}"
+                   Margin="{DynamicResource GapTop}" TextWrapping="Wrap" Visibility="Collapsed"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="{DynamicResource GapTopL}">
+            <Button Content="{l:Str Common.Cancel}" Style="{StaticResource PushButton}" IsCancel="True" Click="Cancel_Click"/>
+            <Button Content="{l:Str Common.Apply}" Style="{StaticResource AccentButton}" IsDefault="True"
+                    Margin="{DynamicResource GapLeft}" Click="Save_Click"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

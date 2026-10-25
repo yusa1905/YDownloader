@@ -1,0 +1,30 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:s="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Zeichen aus Segoe Fluent Icons (Windows 11), Ersatz Segoe MDL2 Assets -->
+    <s:String x:Key="IconAdd">&#xE710;</s:String>
+    <s:String x:Key="IconPlay">&#xE768;</s:String>
+    <s:String x:Key="IconPause">&#xE769;</s:String>
+    <s:String x:Key="IconRetry">&#xE72C;</s:String>
+    <s:String x:Key="IconFolder">&#xE838;</s:String>
+    <s:String x:Key="IconDelete">&#xE74D;</s:String>
+    <s:String x:Key="IconClear">&#xEA99;</s:String>
+    <s:String x:Key="IconDownload">&#xE896;</s:String>
+    <s:String x:Key="IconLink">&#xE71B;</s:String>
+    <s:String x:Key="IconEdit">&#xE70F;</s:String>
+    <s:String x:Key="IconCheck">&#xE73E;</s:String>
+    <s:String x:Key="IconChevronRight">&#xE76C;</s:String>
+    <s:String x:Key="IconChevronDown">&#xE70D;</s:String>
+    <s:String x:Key="IconPaste">&#xE77F;</s:String>
+    <s:String x:Key="IconFilter">&#xE71C;</s:String>
+    <s:String x:Key="IconTag">&#xE8EC;</s:String>
+    <s:String x:Key="IconAll">&#xE8FD;</s:String>
+    <s:String x:Key="IconDone">&#xE930;</s:String>
+    <s:String x:Key="IconWarning">&#xE7BA;</s:String>
+    <s:String x:Key="IconActive">&#xE896;</s:String>
+    <s:String x:Key="IconWaiting">&#xE823;</s:String>
+    <s:String x:Key="IconQueue">&#xE823;</s:String>
+    <s:String x:Key="IconSettings">&#xE713;</s:String>
+    <s:String x:Key="IconPower">&#xE7E8;</s:String>
+</ResourceDictionary>
