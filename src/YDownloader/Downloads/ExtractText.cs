@@ -27,9 +27,19 @@ public static class ExtractText
         ExtractFailure.MissingParts => Loc.T("Extract.Reason.MissingParts"),
         ExtractFailure.Unreadable => Loc.T("Extract.Reason.Unreadable"),
         ExtractFailure.Timeout => Loc.T("Extract.Reason.Timeout"),
+        ExtractFailure.Corrupt => Loc.T("Extract.Reason.Corrupt"),
+        ExtractFailure.UnsupportedMethod => UnsupportedMethod(detail),
         ExtractFailure.ToolFailed or ExtractFailure.Io => string.IsNullOrWhiteSpace(detail) ? Loc.T("Extract.Reason.Unknown") : detail,
         _ => Loc.T("Extract.Reason.Unknown"),
     };
+
+    /// <summary>Detail: „Name“ oder „Name|install“ (kein weiterer Entpacker da, 7-Zip würde helfen); ohne Name „unbekanntes Verfahren“.</summary>
+    private static string UnsupportedMethod(string? detail)
+    {
+        string[] parts = (detail ?? "").Split('|');
+        string name = parts[0].Length > 0 ? parts[0] : Loc.T("Extract.Reason.MethodUnknown");
+        return Loc.T(parts.Length > 1 && parts[1] == "install" ? "Extract.Reason.UnsupportedMethodInstall" : "Extract.Reason.UnsupportedMethod", name);
+    }
 
     private static string NoSpace(string? detail)
     {

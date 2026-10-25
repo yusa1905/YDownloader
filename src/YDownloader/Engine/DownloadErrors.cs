@@ -49,7 +49,14 @@ public sealed class PartialKeptException : Exception
 /// <summary>Der Server liefert eine Webseite statt der Datei (<see cref="DownloadRequest.RejectHtml"/>).</summary>
 public sealed class HtmlResponseException : Exception
 {
-    public HtmlResponseException() : base("Der Server liefert eine Webseite statt der Datei.") { }
+    public HtmlResponseException(bool hostsUnavailable = false) : base("Der Server liefert eine Webseite statt der Datei.") =>
+        HostsUnavailable = hostsUnavailable;
+
+    /// <summary>
+    /// Debrid war an, die Liste der Hoster aber nicht zu bekommen: Der Link ging deshalb nicht an den Dienst und der Hoster
+    /// lieferte seine Webseite. Setzt der Aufrufer, die Engine kennt Debrid nicht.
+    /// </summary>
+    public bool HostsUnavailable { get; }
 
     internal static bool IsHtml(string? mediaType) =>
         mediaType is not null && (mediaType.Equals("text/html", StringComparison.OrdinalIgnoreCase)

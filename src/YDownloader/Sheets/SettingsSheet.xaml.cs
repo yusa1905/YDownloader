@@ -181,10 +181,19 @@ public partial class SettingsSheet : UserControl
         s.NotifyFailed = NotifyFailedBox.IsChecked == true;
         s.NotifyAllDone = NotifyAllDoneBox.IsChecked == true;
 
-        _host.CloseSheet();
         app.ApplyAppearance();
         app.UpdateClipboardWatch();
-        _downloads.SettingsChanged();
+
+        // Erst schließen, wenn gespeichert ist: Ein Schreibfehler steht im Sheet, statt dass „Übernehmen“ still scheitert.
+        SaveButton.IsEnabled = false;
+        string? saveError = await _downloads.SettingsChangedAsync();
+        SaveButton.IsEnabled = true;
+        if (saveError is not null)
+        {
+            ShowError(saveError);
+            return false;
+        }
+        _host.CloseSheet();
         return true;
     }
 

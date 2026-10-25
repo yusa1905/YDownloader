@@ -23,13 +23,82 @@ public static class FileNames
         "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9", "LPT¹", "LPT²", "LPT³",
     };
 
-    /// <summary>Name aus <c>Content-Disposition</c>, sonst aus dem letzten Pfadteil der URL. Immer bereinigt.</summary>
-    public static string FromResponse(HttpResponseMessage resp, Uri url)
+    /// <summary>Endungen, die einen Seitenaufruf meinen, nicht den Typ der Datei (<c>download.php</c>).</summary>
+    private static readonly HashSet<string> PageExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        string? name = null;
-        if (resp.Content.Headers.NonValidated.TryGetValues("Content-Disposition", out var values))
-            name = FromContentDisposition(values.ToString());
-        return Sanitize(name ?? FromUrl(url));
+        ".php", ".asp", ".aspx", ".jsp", ".cgi", ".pl", ".do", ".action", ".html", ".htm", ".shtml", ".xhtml",
+    };
+
+    private static readonly string[] NameParameters = { "file", "filename", "name" };
+
+    /// <summary>
+    /// Endungen von Archiven, Medien und Programmen: Antwortet der Server für einen solchen Namen mit einer Webseite,
+    /// ist das ein Fehler (Fehlerseite, Login, Werbung), keine Datei.
+    /// </summary>
+    private static readonly HashSet<string> BinaryExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".zip", ".rar", ".7z", ".tar", ".gz", ".tgz", ".bz2", ".xz", ".zst", ".iso",
+        ".mkv", ".mp4", ".avi", ".mov", ".webm", ".m4v", ".wmv", ".flv", ".ts",
+        ".mp3", ".flac", ".m4a", ".aac", ".ogg", ".opus", ".wav",
+        ".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic",
+        ".exe", ".msi", ".msix", ".appx", ".apk",
+    };
+
+    /// <summary>Content-Type → Endung, für Antworten ohne brauchbaren Namen. Nie für octet-stream und text/html.</summary>
+    private static readonly Dictionary<string, string> TypeExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["application/zip"] = ".zip",
+        ["application/x-zip-compressed"] = ".zip",
+        ["application/x-zip"] = ".zip",
+        ["application/x-7z-compressed"] = ".7z",
+        ["application/vnd.rar"] = ".rar",
+        ["application/x-rar-compressed"] = ".rar",
+        ["application/x-rar"] = ".rar",
+        ["application/gzip"] = ".gz",
+        ["application/x-gzip"] = ".gz",
+        ["application/x-tar"] = ".tar",
+        ["application/x-bzip2"] = ".bz2",
+        ["application/x-xz"] = ".xz",
+        ["application/zstd"] = ".zst",
+        ["application/x-iso9660-image"] = ".iso",
+        ["application/pdf"] = ".pdf",
+        ["application/epub+zip"] = ".epub",
+        ["application/x-msdownload"] = ".exe",
+        ["application/vnd.microsoft.portable-executable"] = ".exe",
+        ["application/x-msi"] = ".msi",
+        ["application/vnd.android.package-archive"] = ".apk",
+        ["video/mp4"] = ".mp4",
+        ["video/x-matroska"] = ".mkv",
+        ["video/webm"] = ".webm",
+        ["video/quicktime"] = ".mov",
+        ["video/x-msvideo"] = ".avi",
+        ["audio/mpeg"] = ".mp3",
+        ["audio/mp4"] = ".m4a",
+        ["audio/aac"] = ".aac",
+        ["audio/flac"] = ".flac",
+        ["audio/x-flac"] = ".flac",
+        ["audio/ogg"] = ".ogg",
+        ["audio/wav"] = ".wav",
+        ["audio/x-wav"] = ".wav",
+        ["image/png"] = ".png",
+        ["image/jpeg"] = ".jpg",
+        ["image/gif"] = ".gif",
+        ["image/webp"] = ".webp",
+    };
+
+    /// <summary>
+    /// Name der Datei: <c>Content-Disposition</c> hat Vorrang. Sonst der beste Name aus den Adressen (siehe
+    /// <see cref="GuessFromUrls"/>, die endgültige zuerst, dann die ursprüngliche), und fehlt dann noch die Endung, die
+    /// aus dem Content-Type. Immer bereinigt.
+    /// </summary>
+    public static string FromResponse(HttpResponseMessage resp, Uri url, Uri? original = null)
+    {
+        if (resp.Content.Headers.NonValidated.TryGetValues("Content-Disposition", out var values)
+            && FromContentDisposition(values.ToString()) is { } disposition && !string.IsNullOrWhiteSpace(disposition))
+            return Sanitize(disposition);
+
+        string? guess = original is null || original == url ? GuessFromUrls(url) : GuessFromUrls(url, original);
+        return Sanitize(WithTypeExtension(guess, resp.Content.Headers.ContentType?.MediaType));
     }
 
     public static string? FromUrl(Uri url)
@@ -37,6 +106,82 @@ public static class FileNames
         string path = url.AbsolutePath;
         string last = Uri.UnescapeDataString(path[(path.LastIndexOf('/') + 1)..]);
         return last.Length > 0 ? last : null;
+    }
+
+    /// <summary>Hat der Name eine Endung, die eine Datei meint (nicht <c>.php</c>, <c>.html</c> und Ähnliches)?</summary>
+    public static bool HasRealExtension(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return false;
+        string ext = Path.GetExtension(name);
+        if (ext.Length is < 2 or > 9 || PageExtensions.Contains(ext)) return false;
+        for (int i = 1; i < ext.Length; i++)
+            if (!char.IsAsciiLetterOrDigit(ext[i])) return false;
+        return true;
+    }
+
+    /// <summary>
+    /// Wert von <c>file</c>, <c>filename</c> oder <c>name</c> aus der Abfrage, aber nur mit echter Endung
+    /// (<c>download.php?file=setup.zip</c> → <c>setup.zip</c>).
+    /// </summary>
+    public static string? FromQuery(Uri url)
+    {
+        string query = url.Query;
+        if (query.Length < 2) return null;
+        foreach (string pair in query[1..].Split('&'))
+        {
+            int eq = pair.IndexOf('=');
+            if (eq <= 0 || !NameParameters.Contains(Unescape(pair[..eq]), StringComparer.OrdinalIgnoreCase)) continue;
+            string value = Unescape(pair[(eq + 1)..].Replace('+', ' '));
+            value = value[(value.LastIndexOfAny(new[] { '/', '\\' }) + 1)..];
+            if (HasRealExtension(value)) return value;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Bester Name aus den Adressen, in der Reihenfolge der Angabe: je Adresse der Pfadname mit echter Endung, sonst der Name
+    /// aus der Abfrage. Hat keine eine echte Endung, bleibt der erste Pfadname (oder null).
+    /// </summary>
+    public static string? GuessFromUrls(params Uri[] urls)
+    {
+        foreach (var url in urls)
+        {
+            string? path = FromUrl(url);
+            if (HasRealExtension(path)) return path;
+            if (FromQuery(url) is { } query) return query;
+        }
+        return urls.Select(FromUrl).FirstOrDefault(n => n is not null);
+    }
+
+    /// <summary>Endung für einen Content-Type aus der kleinen Tabelle, sonst null (auch für octet-stream und text/html).</summary>
+    public static string? ExtensionFor(string? mediaType) =>
+        mediaType is not null && TypeExtensions.TryGetValue(mediaType.Trim(), out var ext) ? ext : null;
+
+    /// <summary>
+    /// Fehlt dem Namen eine echte Endung, kommt die aus dem Content-Type dazu (eine Seiten-Endung wie <c>.php</c> weicht ihr).
+    /// Ohne Namen wird <c>download</c> daraus. Ist der Typ nicht in der Tabelle, bleibt der Name, wie er ist.
+    /// </summary>
+    public static string? WithTypeExtension(string? name, string? mediaType)
+    {
+        if (HasRealExtension(name) || ExtensionFor(mediaType) is not { } ext) return name;
+        if (string.IsNullOrWhiteSpace(name)) return "download" + ext;
+        string current = Path.GetExtension(name);
+        if (PageExtensions.Contains(current)) name = name[..^current.Length];
+        return name + ext;
+    }
+
+    /// <summary>Der Name endet auf ein Archiv, ein Medium oder ein Programm: Eine Webseite als Antwort kann nicht stimmen.</summary>
+    public static bool ExpectsBinary(string? name) =>
+        !string.IsNullOrEmpty(name) && BinaryExtensions.Contains(Path.GetExtension(name));
+
+    /// <summary>Der Name endet auf eine Webseite (<c>.html</c>, <c>.htm</c>, <c>.xhtml</c>, <c>.shtml</c>).</summary>
+    public static bool IsPageName(string? name) =>
+        !string.IsNullOrEmpty(name) && Path.GetExtension(name).ToLowerInvariant() is ".html" or ".htm" or ".xhtml" or ".shtml";
+
+    private static string Unescape(string s)
+    {
+        try { return Uri.UnescapeDataString(s); }
+        catch (UriFormatException) { return s; }
     }
 
     /// <summary>

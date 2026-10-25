@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -25,7 +26,7 @@ public static class ErrorText
         TimeoutException => Loc.T("Error.Timeout"),
         UriFormatException => Loc.T("Error.InvalidAddress"),
         StorageException { NeededBytes: >= 0 } disk => Loc.T("Error.DiskFull", disk.NeededBytes / (1024 * 1024), disk.FreeBytes / (1024 * 1024)),
-        StorageException { InnerException: { } inner } => Loc.T("Error.Storage", inner.Message),
+        StorageException { InnerException: { } inner } => LocalFile(inner) ?? Loc.T("Error.Storage", inner.Message),
         RemoteFileChangedException => Loc.T("Error.FileChanged"),
         ChecksumMismatchException sum => Loc.T("Error.Checksum", sum.Expected, sum.Actual),
         DestinationExistsException exists => Loc.T("Error.DestinationExists", exists.Path),
@@ -34,13 +35,32 @@ public static class ErrorText
             Loc.T("Error.Kept.SizeChanged", Format.Bytes(size.RemoteSize), Format.Bytes(size.LocalSize)),
         PartialKeptException { Conflict: ResumeConflict.NoRanges } => Loc.T("Error.Kept.NoRanges"),
         PartialKeptException => Loc.T("Error.Kept.FileChanged"),
+        HtmlResponseException { HostsUnavailable: true } => Loc.T("Error.HtmlResponse.NoHosts"),
         HtmlResponseException => Loc.T("Error.HtmlResponse"),
         DebridException debrid => Debrid(debrid),
         StorageException or InvalidDataException => ex.Message,
-        IOException => Loc.T("Error.ConnectionAborted"),
+        // Dateifehler von Windows (HRESULT 0x8007xxxx) sind lokal; was ohne solchen Code abbricht, ist die Verbindung.
+        IOException io => LocalFile(io) ?? (IsWin32Error(io) ? Loc.T("Error.Storage", io.Message) : Loc.T("Error.ConnectionAborted")),
         UnauthorizedAccessException => Loc.T("Error.NoAccess"),
         NotSupportedException => Loc.T("Error.Unsupported"),
         _ => ex.Message,
+    };
+
+    // Win32-Fehler, bei denen Ordner oder Laufwerk nicht (mehr) da sind: Pfad nicht gefunden, Laufwerk nicht bereit, Netzpfad
+    // oder Netzwerkname weg, unerwarteter Netzwerkfehler, Gerät nicht verbunden.
+    private static readonly HashSet<uint> TargetGone = new() { 0x03, 0x15, 0x35, 0x3B, 0x40, 0x43, 0x48F };
+
+    private static bool IsWin32Error(Exception ex) => ((uint)ex.HResult & 0xFFFF0000) == 0x80070000;
+
+    /// <summary>Text für einen lokalen Dateifehler, den ein Benutzer beheben kann (Ordner weg, Pfad zu lang, kein Zugriff), sonst null.</summary>
+    private static string? LocalFile(Exception ex) => ex switch
+    {
+        PathTooLongException => Loc.T("Error.PathTooLong"),
+        DirectoryNotFoundException or DriveNotFoundException => Loc.T("Error.FolderNotFound"),
+        UnauthorizedAccessException => Loc.T("Error.NoAccess"),
+        _ when IsWin32Error(ex) && (uint)ex.HResult == 0x800700CE => Loc.T("Error.PathTooLong"),
+        _ when IsWin32Error(ex) && TargetGone.Contains((uint)ex.HResult & 0xFFFF) => Loc.T("Error.FolderNotFound"),
+        _ => null,
     };
 
     /// <summary>Ohne Key und ohne Link: nur die Art des Fehlers und bei unbekannten Fällen der Code des Dienstes.</summary>

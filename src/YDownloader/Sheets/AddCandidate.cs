@@ -37,7 +37,7 @@ public sealed class AddCandidate : Observable
         Key = LinkParser.Normalize(url);
         Uri.TryCreate(url, UriKind.Absolute, out var uri);
         Host = uri?.Host ?? "";
-        _name = FileNames.Sanitize(uri is null ? null : FileNames.FromUrl(uri));
+        _name = FileNames.Sanitize(uri is null ? null : FileNames.GuessFromUrls(uri));
     }
 
     public string Url { get; }

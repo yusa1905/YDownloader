@@ -31,6 +31,86 @@ public class ExtractPlannerTests
     }
 
     [Theory]
+    [InlineData(ArchiveType.Zip, false, false, true, true, true, "SevenZip,Tar")]    // fremdes Verfahren: .NET entfällt
+    [InlineData(ArchiveType.Zip, false, false, true, false, true, "Tar")]
+    [InlineData(ArchiveType.Zip, false, false, false, true, true, "DotNet,SevenZip,Tar")]
+    [InlineData(ArchiveType.Zip, false, false, false, false, true, "DotNet,Tar")]
+    [InlineData(ArchiveType.Zip, false, true, false, true, true, "SevenZip")]          // geschützt: kein tar
+    [InlineData(ArchiveType.Rar, true, false, false, true, true, "SevenZip")]          // mehrteilig: kein tar
+    [InlineData(ArchiveType.Zip, false, false, true, false, false, "")]
+    public void Chain_lists_extractors_in_order(ArchiveType type, bool multi, bool encrypted, bool unsupported, bool sevenZip, bool tar, string expected)
+    {
+        var chain = ExtractPlanner.Chain(type, multi, encrypted, unsupported, sevenZip, tar);
+        Assert.Equal(expected, string.Join(",", chain));
+    }
+
+    [Theory]
+    [InlineData(ExtractState.Failed, ExtractFailure.Unreadable, true)]
+    [InlineData(ExtractState.Failed, ExtractFailure.Corrupt, true)]
+    [InlineData(ExtractState.Failed, ExtractFailure.UnsupportedMethod, true)]
+    [InlineData(ExtractState.Failed, ExtractFailure.ToolFailed, true)]
+    [InlineData(ExtractState.Failed, ExtractFailure.NoSpace, false)]
+    [InlineData(ExtractState.Failed, ExtractFailure.UnsafePath, false)]
+    [InlineData(ExtractState.Failed, ExtractFailure.Link, false)]
+    [InlineData(ExtractState.Failed, ExtractFailure.MissingParts, false)]
+    [InlineData(ExtractState.Failed, ExtractFailure.Timeout, false)]
+    [InlineData(ExtractState.Failed, ExtractFailure.Io, false)]
+    [InlineData(ExtractState.NeedPassword, ExtractFailure.None, false)]
+    [InlineData(ExtractState.Done, ExtractFailure.None, false)]
+    public void Next_extractor_is_tried_only_for_causes_another_one_may_fix(ExtractState state, ExtractFailure failure, bool expected) =>
+        Assert.Equal(expected, ExtractPlanner.ShouldTryNext(new ExtractResult(state, failure)));
+
+    [Fact]
+    public void Final_failure_prefers_a_known_cause()
+    {
+        var tool = new ExtractResult(ExtractState.Failed, ExtractFailure.ToolFailed, "ERROR: x");
+        var corrupt = new ExtractResult(ExtractState.Failed, ExtractFailure.Corrupt);
+        var method = new ExtractResult(ExtractState.Failed, ExtractFailure.UnsupportedMethod);
+        Assert.Equal(ExtractFailure.Unreadable, ExtractPlanner.FinalFailure(Array.Empty<ExtractResult>(), null).Failure);
+        Assert.Equal(tool, ExtractPlanner.FinalFailure(new[] { tool }, null));
+        Assert.Equal(corrupt, ExtractPlanner.FinalFailure(new[] { tool, corrupt, tool }, null));
+        Assert.Equal(method, ExtractPlanner.FinalFailure(new[] { corrupt, method, tool }, null));
+        var named = ExtractPlanner.FinalFailure(new[] { corrupt, tool }, "Zstandard");
+        Assert.Equal(ExtractFailure.UnsupportedMethod, named.Failure);
+        Assert.Equal("Zstandard", named.Detail);
+    }
+
+    [Theory]
+    [InlineData("The archive entry was compressed using an unsupported compression method.", ExtractFailure.UnsupportedMethod)]
+    [InlineData("tar.exe: Unsupported ZIP compression method (93: zstd)", ExtractFailure.UnsupportedMethod)]
+    [InlineData("ERROR: Unsupported Method : a.txt", ExtractFailure.UnsupportedMethod)]
+    [InlineData("ERROR: Data Error : a.txt", ExtractFailure.Corrupt)]
+    [InlineData("ERROR: CRC Failed : a.txt", ExtractFailure.Corrupt)]
+    [InlineData("WARNINGS: There are data after the end of archive\nERROR: Unexpected end of archive", ExtractFailure.Corrupt)]
+    [InlineData("tar.exe: Error opening archive: Unrecognized archive format", ExtractFailure.Corrupt)]
+    [InlineData("tar.exe: Truncated ZIP file data", ExtractFailure.Corrupt)]
+    [InlineData("End of Central Directory record could not be found.", ExtractFailure.Corrupt)]
+    [InlineData("ERROR: Cannot open the file as archive", ExtractFailure.Corrupt)]
+    [InlineData("Access is denied", ExtractFailure.None)]
+    [InlineData("", ExtractFailure.None)]
+    public void Tool_messages_map_to_a_cause(string text, ExtractFailure expected) =>
+        Assert.Equal(expected, ExtractErrors.Classify(text));
+
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(8, true)]
+    [InlineData(9, true)]
+    [InlineData(99, true)]
+    [InlineData(93, false)]
+    [InlineData(95, false)]
+    [InlineData(14, false)]
+    public void Dotnet_reads_only_stored_deflate_and_deflate64(int method, bool reads) =>
+        Assert.Equal(reads, ZipMethods.DotNetReads(method));
+
+    [Fact]
+    public void Method_names_are_readable()
+    {
+        Assert.Equal("Zstandard", ZipMethods.Name(93));
+        Assert.Equal("XZ", ZipMethods.Name(95));
+        Assert.Equal("#777", ZipMethods.Name(777));
+    }
+
+    [Theory]
     [InlineData(ArchiveType.Rar, true, false, false, true)]      // mehrteilig, tar kann das nicht sicher
     [InlineData(ArchiveType.Zip, true, false, false, true)]
     [InlineData(ArchiveType.Zip, false, true, false, true)]      // geschützt

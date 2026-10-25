@@ -61,14 +61,6 @@ public sealed class ArchiveExtractor
         {
             throw;
         }
-        catch (InvalidDataException ex)
-        {
-            return new(ExtractState.Failed, ExtractFailure.Unreadable, Short(ex.Message));
-        }
-        catch (NotSupportedException ex)
-        {
-            return new(ExtractState.Failed, ExtractFailure.Unreadable, Short(ex.Message));
-        }
         catch (TimeoutException)
         {
             return new(ExtractState.Failed, ExtractFailure.Timeout);
@@ -89,18 +81,25 @@ public sealed class ArchiveExtractor
         if (job.PartPaths.Count == 0 || job.PartPaths.Any(p => !File.Exists(p)) || !File.Exists(job.EntryPath))
             return new(ExtractState.Failed, ExtractFailure.MissingParts);
 
-        bool zipEncrypted = false;
+        var zipInfo = default(ZipInfo);
         if (job.Type == ArchiveType.Zip && !job.MultiPart)
         {
-            using var fs = File.OpenRead(job.EntryPath);
-            zipEncrypted = ZipProbe.IsEncrypted(fs);
+            using var fs = new FileStream(job.EntryPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            zipInfo = ZipProbe.Scan(fs);
         }
 
         // Erst jetzt wird gesucht: der Startpfad bleibt davon frei.
         string? sevenZip = _findSevenZip();
         string? tar = _findTar();
-        var choice = ExtractPlanner.Choose(job.Type, job.MultiPart, zipEncrypted, sevenZip is not null, tar is not null);
-        if (choice.Extractor is not { } kind) return new(choice.Blocked);
+        var chain = ExtractPlanner.Chain(job.Type, job.MultiPart, zipInfo.Encrypted, zipInfo.UnsupportedMethod is not null,
+            sevenZip is not null, tar is not null);
+        if (chain.Count == 0)
+        {
+            // Kein Entpacker: Ist das Verfahren bekannt, steht es in der Meldung, sonst „7-Zip nötig“.
+            return zipInfo.UnsupportedName is { } name
+                ? new(ExtractState.Failed, ExtractFailure.UnsupportedMethod, name + "|install")
+                : new(ExtractState.NeedSevenZip);
+        }
 
         bool created = !Directory.Exists(job.TargetDir);
         Directory.CreateDirectory(job.TargetDir);
@@ -110,13 +109,35 @@ public sealed class ArchiveExtractor
         try
         {
             string? usedPassword = null;
-            ExtractResult? stop = kind switch
+            var failures = new List<ExtractResult>();
+            bool done = false;
+            foreach (var kind in chain)
             {
-                ExtractorKind.DotNet => ExtractZip(job, staging, ct),
-                ExtractorKind.SevenZip => ExtractSevenZip(sevenZip!, job, staging, ct, out usedPassword),
-                _ => ExtractTar(tar!, job, staging, ct),
-            };
-            if (stop is not null) return stop;
+                ct.ThrowIfCancellationRequested();
+                if (failures.Count > 0) ClearDirectory(staging); // Reste des vorigen Versuchs
+                ExtractResult? stop;
+                try
+                {
+                    stop = kind switch
+                    {
+                        ExtractorKind.DotNet => ExtractZip(job, staging, ct),
+                        ExtractorKind.SevenZip => ExtractSevenZip(sevenZip!, job, staging, ct, out usedPassword),
+                        _ => ExtractTar(tar!, job, staging, ct),
+                    };
+                }
+                catch (Exception ex) when (ex is InvalidDataException or NotSupportedException)
+                {
+                    stop = FromException(ex);
+                }
+                catch (Win32Exception ex) when (kind != chain[^1])
+                {
+                    stop = new(ExtractState.Failed, ExtractFailure.ToolFailed, Short(ex.Message)); // Programm nicht startbar: der nächste darf es versuchen
+                }
+                if (stop is null) { done = true; break; }
+                if (!ExtractPlanner.ShouldTryNext(stop)) return stop;
+                failures.Add(stop);
+            }
+            if (!done) return ExtractPlanner.FinalFailure(failures, zipInfo.UnsupportedName);
 
             var files = ValidateStaging(staging, ct);
             if (files is null) return new(ExtractState.Failed, ExtractFailure.Link);
@@ -403,8 +424,16 @@ public sealed class ArchiveExtractor
         if (LooksLikePasswordProblem(output)) return new(ExtractState.NeedPassword);
         string? line = output.Split('\n').Select(l => l.Trim()).LastOrDefault(l => l.StartsWith("ERROR", StringComparison.OrdinalIgnoreCase))
             ?? output.Split('\n').Select(l => l.Trim()).LastOrDefault(l => l.Length > 0);
-        return new(ExtractState.Failed, ExtractFailure.ToolFailed, line is null ? null : Short(line));
+        // Ein erkanntes Verfahren oder ein beschädigtes Archiv bekommt seinen eigenen Grund (ohne Text des Programms).
+        return ExtractErrors.Classify(output) is var reason and (ExtractFailure.UnsupportedMethod or ExtractFailure.Corrupt)
+            ? new(ExtractState.Failed, reason)
+            : new(ExtractState.Failed, ExtractFailure.ToolFailed, line is null ? null : Short(line));
     }
+
+    /// <summary>Eine Ausnahme von <c>System.IO.Compression</c>: Verfahren unbekannt oder Archiv beschädigt.</summary>
+    internal static ExtractResult FromException(Exception ex) =>
+        new(ExtractState.Failed, ExtractErrors.Classify(ex.Message) == ExtractFailure.UnsupportedMethod || ex is NotSupportedException
+            ? ExtractFailure.UnsupportedMethod : ExtractFailure.Corrupt);
 
     private static string Short(string text)
     {

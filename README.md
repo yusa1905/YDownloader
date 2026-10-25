@@ -6,7 +6,7 @@ First public release of **YDownloader**, a lean, fast download manager for Windo
 
 - **Downloads:** multiple connections per file, resume, checksums, queues with schedules and limits, per-host limits, "after completion" actions (shut down, hibernate, sleep) and keep-awake.
 - **Link grabber and packages:** the Add dialog detects multi-part archives (`.partN.rar`, `.rar` + `.r00`, `.7z.001`, `.zip.001`, `.z01`), groups them into packages with their own folder and shows missing parts. It offers filters (`ext:`, `size>`, `host:`, `status:`), auto-deselect rules and an online check via AllDebrid.
-- **Archive extraction:** automatic after download (can be turned off). Plain ZIP works out of the box; RAR, 7z, multi-part and password-protected archives use an installed 7-Zip. Archives are never deleted, existing files are never overwritten, unsafe paths are rejected.
+- **Archive extraction:** automatic after download (can be turned off). Plain ZIP works out of the box with .NET. Multi-part and password-protected archives need an installed 7-Zip. Single-part RAR and 7z use 7-Zip, with Windows `tar.exe` as a fallback, and `tar.exe` also stands in for ZIP files that use compression methods .NET cannot read (for example Zstandard). The order is .NET, 7-Zip, `tar.exe`. Archives are never deleted, existing files are never overwritten, unsafe paths are rejected.
 - **Archive passwords:** a list in Settings (encrypted for your Windows account), a password entered from the row menu, and passwords sent along by Click'n'Load. They are tried in turn and passed to 7-Zip through standard input, never on the command line.
 - **Browser extension** for Chrome and Firefox: right-click a link, image, video, audio or selected text. Links land in the Add dialog, nothing starts until you confirm.
 - **Click'n'Load** (off by default): listens on `127.0.0.1:9666` only, including AES-encrypted links.
@@ -17,14 +17,14 @@ First public release of **YDownloader**, a lean, fast download manager for Windo
 
 ## Performance
 
-Measured on one machine (Windows 11), Release build (ReadyToRun, win-x64), portable copy, empty list, one run per package, three minutes idle: the window is visible after about 320 ms. Private working set is about 60–64 MB; the working set, which includes shared pages such as the graphics driver and runtime, is about 130–136 MB. Other machines, drivers and lists will differ, and running downloads use more.
+Measured on one machine (Windows 11), Release build (ReadyToRun, win-x64), portable copy, empty list, one run per package (1.0.0 and 1.0.1), three minutes idle: the window is visible after about 320 ms. Private working set is about 60–64 MB; the working set, which includes shared pages such as the graphics driver and runtime, is about 130–136 MB. Other machines, drivers and lists will differ, and running downloads use more.
 
 ## Downloads
 
 | File | Size | Notes |
 |---|---|---|
-| `YDownloader-1.0.0-framework-dependent.zip` | ~1 MB | Needs the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) (x64) |
-| `YDownloader-1.0.0-self-contained.zip` | ~62 MB | Runs without any installed runtime |
+| `YDownloader-1.0.1-framework-dependent.zip` | ~1 MB | Needs the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) (x64) |
+| `YDownloader-1.0.1-self-contained.zip` | ~62 MB | Runs without any installed runtime |
 
 Requires Windows 11 (x64). Extract the zip anywhere and run `YDownloader.exe`. There is no installer; data lives in `%AppData%\YDownloader` unless you use portable mode.
 
@@ -52,8 +52,8 @@ If you move the program folder, press *Update* in the same settings page.
 ## SHA-256
 
 ```
-767220ff8c1e5f62ac8d5c1d3cacdc43c6649de2d6dbf63c28462e3bf877fe5a  YDownloader-1.0.0-framework-dependent.zip
-cc0fb9f1c1c348d149a83db386fd6474357485d0343923e92127b3d780487db1  YDownloader-1.0.0-self-contained.zip
+754c91cfd8fd35cdea4578a1c998e604cab09bb762af87d8c69743a117cda505  YDownloader-1.0.1-framework-dependent.zip
+807342ee7252b01a908f36c91d891a522160c155e302de57df36ea8bcdbe1cdc  YDownloader-1.0.1-self-contained.zip
 ```
 
 Also attached as `SHA256SUMS.txt`.

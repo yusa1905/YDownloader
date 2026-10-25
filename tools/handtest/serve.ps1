@@ -1,8 +1,11 @@
-﻿# Stellt C:\Temp\ydl-test\serve nur auf 127.0.0.1:8099 bereit (TcpListener, keine Adminrechte, mit Range-Unterstützung).
-# Beenden mit Strg+C.
-$dir  = 'C:\Temp\ydl-test\serve'
-$port = 8099
-if (-not (Test-Path $dir)) { throw "Erst make-testdata.ps1 ausführen ($dir fehlt)." }
+﻿# Stellt C:\Temp\ydl-test nur auf 127.0.0.1:8099 bereit (TcpListener, keine Adminrechte, mit Range-Unterstützung).
+# Die festen Testdateien liegen in ...\serve und sind unter /<name> erreichbar, alle anderen Dateien unter ihrem Pfad ab dem Ordner.
+# Pfade mit .. oder außerhalb des Ordners gibt es nicht (404). Beenden mit Strg+C.
+$root  = 'C:\Temp\ydl-test'
+$known = Join-Path $root 'serve'
+$dir   = $root
+$port  = 8099
+if (-not (Test-Path $root)) { throw "Erst make-testdata.ps1 ausführen ($root fehlt)." }
 
 Add-Type -TypeDefinition @'
 using System;
@@ -54,7 +57,7 @@ public static class LocalServe
                     }
                 }
                 string name = Uri.UnescapeDataString((p.Length > 1 ? p[1] : "").Split('?')[0]).TrimStart('/');
-                string path = name.Length == 0 || name.IndexOfAny(new[] { '/', '\\', ':' }) >= 0 ? null : Path.Combine(dir, name);
+                string path = Resolve(dir, name);
                 if (path == null || !File.Exists(path)) { Send(s, "404 Not Found", 0, null, ""); return; }
 
                 long len = new FileInfo(path).Length;
@@ -70,6 +73,21 @@ public static class LocalServe
             }
             catch (Exception) { }
         }
+    }
+
+    // Erst die festen Testdateien (dir\serve), dann jede Datei unter dir. Nie außerhalb von dir.
+    static string Resolve(string dir, string name)
+    {
+        if (name.Length == 0 || name.IndexOfAny(new[] { '\\', ':', '\0' }) >= 0) return null;
+        foreach (string seg in name.Split('/'))
+            if (seg.Length == 0 || seg == "." || seg == ".." || seg.TrimEnd('.', ' ').Length == 0) return null;
+        string root = Path.GetFullPath(dir).TrimEnd('\\') + "\\";
+        foreach (string baseDir in new[] { Path.Combine(root, "serve"), root })
+        {
+            string full = Path.GetFullPath(Path.Combine(baseDir, name.Replace('/', '\\')));
+            if (full.StartsWith(root, StringComparison.OrdinalIgnoreCase) && File.Exists(full)) return full;
+        }
+        return null;
     }
 
     static void Send(NetworkStream s, string status, long length, string path, string extra, long offset = 0)
@@ -99,6 +117,23 @@ public static class LocalServe
 $listener = [LocalServe]::Start($dir, $port)
 Write-Host "Läuft auf 127.0.0.1:$port (Strg+C beendet). Diese URLs ins Hinzufügen-Sheet einfügen:`n"
 # Die drei Teile des 7z gehören zusammen und bilden ein Paket.
-Get-ChildItem $dir | Sort-Object Name | ForEach-Object { "http://127.0.0.1:$port/$($_.Name)" }
+$knownNames = @()
+if (Test-Path $known) {
+    Get-ChildItem $known -File | Sort-Object Name | ForEach-Object {
+        $knownNames += $_.Name
+        "http://127.0.0.1:$port/$([uri]::EscapeDataString($_.Name))"
+    }
+}
+$rootFull = (Resolve-Path $root).Path.TrimEnd('\') + '\'
+$others = Get-ChildItem $root -File -Recurse | ForEach-Object {
+    $rel = $_.FullName.Substring($rootFull.Length)
+    if ($rel.StartsWith('serve\', [StringComparison]::OrdinalIgnoreCase)) { return }
+    if ($knownNames -contains $rel) { return }   # gleicher Name wie eine feste Testdatei: die feste gewinnt
+    $rel
+} | Sort-Object
+if ($others) {
+    Write-Host "`nWeitere Dateien im Ordner:"
+    $others | ForEach-Object { "http://127.0.0.1:$port/" + (($_ -split '\\' | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/') }
+}
 Write-Host "`nPasswort von geheim.7z: geheim123 (die App fragt nicht, es soll 'Passwort nötig' erscheinen)."
 try { while ($true) { Start-Sleep 1 } } finally { $listener.Stop() }

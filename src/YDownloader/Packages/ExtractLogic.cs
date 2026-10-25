@@ -32,6 +32,10 @@ public enum ExtractFailure
     Io,
     /// <summary>Ein Aufruf von 7-Zip blieb über das Zeitlimit hinaus hängen.</summary>
     Timeout,
+    /// <summary>Das Archiv nutzt ein Komprimierungsverfahren, das keiner der verfügbaren Entpacker kennt (etwa Zstandard in einer ZIP). Detail: „Name“ oder „Name|install“, wenn gar kein weiterer Entpacker da war.</summary>
+    UnsupportedMethod,
+    /// <summary>Das Archiv ist beschädigt oder unvollständig (Prüfsummenfehler, abgeschnitten, kein gültiges Verzeichnis).</summary>
+    Corrupt,
 }
 
 public enum ExtractorKind
@@ -86,10 +90,46 @@ public static class ExtractPlanner
     /// </summary>
     public static ExtractChoice Choose(ArchiveType type, bool multiPart, bool encrypted, bool sevenZipAvailable, bool tarAvailable)
     {
-        if (type == ArchiveType.Zip && !multiPart && !encrypted) return new(ExtractorKind.DotNet, ExtractState.None);
-        if (sevenZipAvailable) return new(ExtractorKind.SevenZip, ExtractState.None);
-        if (!multiPart && !encrypted && tarAvailable) return new(ExtractorKind.Tar, ExtractState.None);
-        return new(null, ExtractState.NeedSevenZip);
+        var chain = Chain(type, multiPart, encrypted, false, sevenZipAvailable, tarAvailable);
+        return chain.Count > 0 ? new(chain[0], ExtractState.None) : new(null, ExtractState.NeedSevenZip);
+    }
+
+    /// <summary>
+    /// Alle Entpacker, die für das Archiv in Frage kommen, in der Reihenfolge der Versuche: .NET (nur einfache, ungeschützte ZIP
+    /// ohne fremdes Verfahren), dann 7-Zip, dann <c>tar.exe</c> (nur einteilig und ungeschützt). Scheitert einer aus einem Grund,
+    /// den ein anderer vielleicht behebt (<see cref="ShouldTryNext"/>), kommt der nächste dran.
+    /// </summary>
+    public static IReadOnlyList<ExtractorKind> Chain(ArchiveType type, bool multiPart, bool encrypted, bool unsupportedMethod,
+        bool sevenZipAvailable, bool tarAvailable)
+    {
+        var list = new List<ExtractorKind>(3);
+        if (type == ArchiveType.Zip && !multiPart && !encrypted && !unsupportedMethod) list.Add(ExtractorKind.DotNet);
+        if (sevenZipAvailable) list.Add(ExtractorKind.SevenZip);
+        if (!multiPart && !encrypted && tarAvailable) list.Add(ExtractorKind.Tar);
+        return list;
+    }
+
+    /// <summary>
+    /// Soll nach diesem Ergebnis der nächste Entpacker versuchen? Ja, wenn der Entpacker das Archiv nicht lesen konnte oder das
+    /// Verfahren nicht kennt. Nein bei allem, was ein anderer Entpacker nicht ändert (Platz, unsichere Pfade, Verknüpfungen,
+    /// fehlende Teile, Zeitlimit, Dateifehler) und beim Passwort (das haben 7-Zip und der Nutzer in der Hand).
+    /// </summary>
+    public static bool ShouldTryNext(ExtractResult r) =>
+        r.State == ExtractState.Failed &&
+        r.Failure is ExtractFailure.Unreadable or ExtractFailure.Corrupt or ExtractFailure.UnsupportedMethod or ExtractFailure.ToolFailed;
+
+    /// <summary>
+    /// Das Ergebnis, das nach dem Scheitern aller Entpacker gemeldet wird. Ist das Verfahren aus dem ZIP-Verzeichnis bekannt,
+    /// nennt es dieses; sonst gilt ein erkanntes Verfahren oder „beschädigt“ vor der Meldung des letzten Entpackers.
+    /// </summary>
+    public static ExtractResult FinalFailure(IReadOnlyList<ExtractResult> failures, string? unsupportedMethodName)
+    {
+        if (failures.Count == 0) return new(ExtractState.Failed, ExtractFailure.Unreadable);
+        if (unsupportedMethodName is not null)
+            return new(ExtractState.Failed, ExtractFailure.UnsupportedMethod, unsupportedMethodName);
+        return failures.FirstOrDefault(f => f.Failure == ExtractFailure.UnsupportedMethod)
+            ?? failures.FirstOrDefault(f => f.Failure == ExtractFailure.Corrupt)
+            ?? failures[^1];
     }
 
     /// <summary>
@@ -315,12 +355,81 @@ public static class ToolLocator
     }
 }
 
-/// <summary>Liest aus dem Verzeichnis einer ZIP, ob Einträge verschlüsselt sind (Bit 0 der Flags, AES = Methode 99).</summary>
+/// <param name="Encrypted">Mindestens ein Eintrag ist verschlüsselt.</param>
+/// <param name="UnsupportedMethod">Kennung des ersten Komprimierungsverfahrens, das <c>System.IO.Compression</c> nicht liest (null = keins).</param>
+public readonly record struct ZipInfo(bool Encrypted, int? UnsupportedMethod)
+{
+    public string? UnsupportedName => UnsupportedMethod is { } m ? ZipMethods.Name(m) : null;
+}
+
+/// <summary>Namen der Komprimierungsverfahren in ZIP-Verzeichnissen und was <c>System.IO.Compression</c> davon liest.</summary>
+public static class ZipMethods
+{
+    /// <summary>Gespeichert (0), Deflate (8) und Deflate64 (9) liest .NET. AES (99) ist keine Komprimierung, sondern Verschlüsselung.</summary>
+    public static bool DotNetReads(int method) => method is 0 or 8 or 9 or 99;
+
+    public static string Name(int method) => method switch
+    {
+        1 => "Shrink",
+        2 or 3 or 4 or 5 => "Reduce",
+        6 => "Implode",
+        10 => "PKWARE DCL Implode",
+        12 => "BZip2",
+        14 => "LZMA",
+        18 => "IBM TERSE",
+        19 => "IBM LZ77",
+        93 => "Zstandard",
+        95 => "XZ",
+        96 => "JPEG",
+        97 => "WavPack",
+        98 => "PPMd",
+        _ => "#" + method.ToString(System.Globalization.CultureInfo.InvariantCulture),
+    };
+}
+
+/// <summary>Ordnet die Meldung eines Entpackers (oder einer .NET-Ausnahme) einer Ursache zu. Rein auf Text, ohne Prozess.</summary>
+public static class ExtractErrors
+{
+    private static readonly Regex Unsupported = new(
+        @"unsupported[^\r\n]{0,40}(compression|method|feature)|(compression )?method[^\r\n]{0,40}not supported|unknown (compression )?method",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
+
+    private static readonly Regex Damaged = new(
+        @"data error|crc failed|crc error|bad crc|checksum error|unexpected end|premature end|headers error|truncated|corrupt|damaged|" +
+        @"bad zip|invalid (zip|archive)|not a zip|is not (a )?(supported )?archive|can.?t open as archive|can(not|.?t) open (the )?file as|unrecognized archive format|" +
+        @"end of central directory|can.?t find end|cannot find the end|magic number|invalid data|invalid header|invalid (central|local)",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
+
+    /// <summary>
+    /// <see cref="ExtractFailure.UnsupportedMethod"/>, <see cref="ExtractFailure.Corrupt"/> oder <see cref="ExtractFailure.None"/>, wenn der
+    /// Text nichts Erkennbares enthält. Das Verfahren gilt vor „beschädigt“: Manche Entpacker nennen beides in einem Satz.
+    /// </summary>
+    public static ExtractFailure Classify(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return ExtractFailure.None;
+        try
+        {
+            if (Unsupported.IsMatch(text)) return ExtractFailure.UnsupportedMethod;
+            if (Damaged.IsMatch(text)) return ExtractFailure.Corrupt;
+        }
+        catch (RegexMatchTimeoutException)
+        {
+        }
+        return ExtractFailure.None;
+    }
+}
+
+/// <summary>Liest aus dem Verzeichnis einer ZIP, ob Einträge verschlüsselt sind (Bit 0 der Flags, AES = Methode 99) und welche Verfahren vorkommen.</summary>
 public static class ZipProbe
 {
     /// <summary>True, wenn mindestens ein Eintrag verschlüsselt ist. False auch dann, wenn das Verzeichnis nicht zu lesen ist (die Entpackung meldet dann den Fehler).</summary>
-    public static bool IsEncrypted(Stream zip)
+    public static bool IsEncrypted(Stream zip) => Scan(zip).Encrypted;
+
+    /// <summary>Wie <see cref="IsEncrypted"/>, dazu das erste Verfahren, das .NET nicht liest. Ist das Verzeichnis nicht zu lesen (auch ZIP64), kommt „nichts bekannt“.</summary>
+    public static ZipInfo Scan(Stream zip)
     {
+        bool encrypted = false;
+        int? unsupported = null;
         try
         {
             long length = zip.Length;
@@ -332,29 +441,30 @@ public static class ZipProbe
             int eocd = -1;
             for (int i = tail - 22; i >= 0; i--)
                 if (buffer[i] == 0x50 && buffer[i + 1] == 0x4b && buffer[i + 2] == 5 && buffer[i + 3] == 6) { eocd = i; break; }
-            if (eocd < 0) return false;
+            if (eocd < 0) return default;
 
             int count = BitConverter.ToUInt16(buffer, eocd + 10);
             uint offset = BitConverter.ToUInt32(buffer, eocd + 16);
-            if (offset == 0xFFFFFFFF || count == 0xFFFF) return false; // ZIP64: nicht gelesen
+            if (offset == 0xFFFFFFFF || count == 0xFFFF) return default; // ZIP64: nicht gelesen
 
             zip.Seek(offset, SeekOrigin.Begin);
             var header = new byte[46];
             for (int n = 0; n < count; n++)
             {
                 zip.ReadExactly(header, 0, 46);
-                if (BitConverter.ToUInt32(header, 0) != 0x02014b50) return false;
+                if (BitConverter.ToUInt32(header, 0) != 0x02014b50) break;
                 ushort flags = BitConverter.ToUInt16(header, 8);
                 ushort method = BitConverter.ToUInt16(header, 10);
-                if ((flags & 1) != 0 || method == 99) return true;
+                if ((flags & 1) != 0 || method == 99) encrypted = true;
+                if (unsupported is null && !ZipMethods.DotNetReads(method)) unsupported = method;
                 int skip = BitConverter.ToUInt16(header, 28) + BitConverter.ToUInt16(header, 30) + BitConverter.ToUInt16(header, 32);
                 zip.Seek(skip, SeekOrigin.Current);
             }
-            return false;
         }
         catch (Exception ex) when (ex is IOException or EndOfStreamException or ArgumentException)
         {
-            return false;
+            // Was bis hierher gelesen wurde, gilt; den Rest meldet das Entpacken.
         }
+        return new ZipInfo(encrypted, unsupported);
     }
 }

@@ -79,14 +79,28 @@ public sealed class HttpDownloader : IDisposable
         CancellationToken ct)
     {
         // Einmal absolut machen: Dateidialoge können das Arbeitsverzeichnis ändern, dann fände ein Resume die .part nicht.
-        string dest = Path.GetFullPath(request.DestinationPath);
-        request = request with { DestinationPath = dest };
-        if (request.IfExists == ExistingFileMode.Fail && Path.Exists(dest)) throw new DestinationExistsException(dest);
+        // Ein Pfad, der nicht geht (zu lang, Laufwerk weg, Ordner nicht anlegbar), ist ein Speicherfehler, kein Netzwerkabbruch.
+        string dest, part, metaPath;
+        try
+        {
+            dest = Path.GetFullPath(request.DestinationPath);
+            // NTFS erlaubt höchstens 255 Zeichen je Pfadteil; Windows meldet es sonst nur als „ungültiger Name“.
+            if (dest.Split('\\', '/').Any(segment => segment.Length > 255)) throw new PathTooLongException();
+            request = request with { DestinationPath = dest };
+            if (request.IfExists == ExistingFileMode.Fail && Path.Exists(dest)) throw new DestinationExistsException(dest);
 
-        string part = dest + ".part";
-        string metaPath = dest + ".part.json";
-        string? dir = Path.GetDirectoryName(dest);
-        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+            part = dest + ".part";
+            metaPath = dest + ".part.json";
+            string? dir = Path.GetDirectoryName(dest);
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or ArgumentException)
+        {
+            throw new StorageException(ex);
+        }
+
+        // Ein Name auf ein Archiv, Medium oder Programm kann keine Webseite sein: Eine solche Antwort ist Fehlerseite oder Login.
+        if (!request.RejectHtml && FileNames.ExpectsBinary(Path.GetFileName(dest))) request = request with { RejectHtml = true };
 
         // Einmal geschützt, immer geschützt: Auch wenn der Aufrufer das Flag verloren hat, gilt es für dieselbe Quelle weiter.
         if (!request.ProtectPartial && TryLoadMeta(metaPath) is { Protected: true } old && old.Url == SourceOf(request))
@@ -265,7 +279,7 @@ public sealed class HttpDownloader : IDisposable
             var finalUrl = resp.RequestMessage?.RequestUri ?? req.RequestUri!; // Ziel nach Weiterleitungen
             var response = resp;
             RemoteFileInfo Info(long size, bool ranges) => new(finalUrl, size, ranges,
-                FileNames.FromResponse(response, finalUrl), response.Content.Headers.ContentType?.MediaType,
+                FileNames.FromResponse(response, finalUrl, uri), response.Content.Headers.ContentType?.MediaType,
                 response.Headers.ETag?.ToString(), response.Content.Headers.LastModified?.ToString("R"));
 
             if (resp.StatusCode == HttpStatusCode.PartialContent)

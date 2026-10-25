@@ -144,6 +144,11 @@ public sealed class DebridService
         return load.WaitAsync(ct);
     }
 
+    /// <summary>Der letzte Versuch, die Liste der Hoster zu laden, ist gescheitert (und seither keiner geglückt).</summary>
+    public bool HostsLoadFailed => Volatile.Read(ref _hostsFailed);
+
+    private bool _hostsFailed;
+
     private async Task<IReadOnlyList<string>> FetchHostsAsync()
     {
         try
@@ -155,7 +160,13 @@ public sealed class DebridService
                 _hosts = new HashSet<string>(list, StringComparer.Ordinal);
                 _hostsAt = DateTime.UtcNow;
             }
+            Volatile.Write(ref _hostsFailed, false);
             return list;
+        }
+        catch (Exception)
+        {
+            Volatile.Write(ref _hostsFailed, true);
+            throw;
         }
         finally
         {

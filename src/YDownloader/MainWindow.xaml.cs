@@ -86,6 +86,26 @@ public partial class MainWindow : Window
         // Läuft ab hier im Hintergrund; die Abfrage blockiert nie den UI-Thread. Erst nach dem ersten Anzeigen, damit der
         // Start nichts davon merkt.
         Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, _downloads.StartFreeSpace);
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () =>
+        {
+            _noticesReady = true;
+            _downloads.NoticesChanged += (_, _) => ShowNextNotice();
+            ShowNextNotice();
+        });
+    }
+
+    // Hinweise auf gesperrte oder kaputte Dateien: nacheinander, erst nach dem ersten Anzeigen und nie über einem offenen Sheet.
+    private bool _noticesReady;
+    private bool _noticeShowing;
+
+    private async void ShowNextNotice()
+    {
+        if (!_noticesReady || _noticeShowing || IsSheetOpen || !_downloads.Notices.TryDequeue(out var notice)) return;
+        _noticeShowing = true;
+        Reveal();
+        try { await ConfirmSheet.AskAsync(this, notice.Title, notice.Message, Loc.T("Common.OK")); }
+        finally { _noticeShowing = false; }
+        ShowNextNotice();
     }
 
     // ---------------------------------------------------------------- Seitenleiste
@@ -291,6 +311,7 @@ public partial class MainWindow : Window
             _pendingPasswords = new();
             OpenAdd(pending, passwords);
         }
+        else if (!_noticeShowing) ShowNextNotice(); // zurückgestellte Hinweise
     }
 
     private string? _pendingLinks;

@@ -251,22 +251,24 @@ public sealed class AppSettings
     public string EffectiveDownloadFolder =>
         string.IsNullOrWhiteSpace(DownloadFolder) ? AppPaths.UserDownloads() : DownloadFolder;
 
-    public static AppSettings Load(string path)
+    /// <summary>
+    /// Wie das Laden ausging. <see cref="DataFileState.Locked"/>: Die Datei konnte nicht gelesen werden, diese Vorgaben dürfen
+    /// sie nicht überschreiben (der Manager speichert dann nicht). <see cref="DataFileState.Corrupt"/>: als <c>.bad</c> gesichert.
+    /// </summary>
+    [JsonIgnore]
+    public DataFileState LoadState { get; private set; }
+
+    /// <summary>
+    /// Liest die Einstellungen. Gesperrte Dateien werden mehrmals neu gelesen; scheitert das, bleibt die Datei unberührt und
+    /// es gelten die Vorgaben im Speicher. Kaputte Dateien werden vorher als <c>.bad</c> kopiert. Blockiert, nur im Hintergrund aufrufen.
+    /// </summary>
+    public static AppSettings Load(string path, TimeSpan? retryPause = null)
     {
-        try
-        {
-            if (File.Exists(path))
-            {
-                var settings = JsonSerializer.Deserialize(AtomicFile.ReadJson(path), SettingsJsonContext.Default.AppSettings)
-                    ?? new AppSettings();
-                settings.MigrateCategories();
-                return settings;
-            }
-        }
-        catch (Exception ex) when (ex is JsonException or IOException)
-        {
-        }
-        return new AppSettings();
+        var state = DataFile.Load(path, SettingsJsonContext.Default.AppSettings, out var settings, retryPause);
+        settings ??= new AppSettings();
+        settings.LoadState = state;
+        settings.MigrateCategories();
+        return settings;
     }
 
     /// <summary>Auf dem UI-Thread serialisieren, dann mit <see cref="Write"/> im Hintergrund schreiben.</summary>

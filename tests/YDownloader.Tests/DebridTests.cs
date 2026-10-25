@@ -413,6 +413,62 @@ public class DebridTests : IDisposable
     }
 
     [Fact]
+    public async Task Service_remembers_that_the_host_list_could_not_be_loaded()
+    {
+        _fake.HostsOverride = (503, "<html>down</html>");
+        var service = Service();
+        Assert.False(service.HostsLoadFailed);
+
+        Assert.Null(await service.TryUnlockAsync("https://mega.nz/file/ok", null, default));
+        Assert.True(service.HostsLoadFailed);
+
+        _fake.HostsOverride = null;
+        Assert.NotNull(await service.TryUnlockAsync("https://mega.nz/file/ok", null, default));
+        Assert.False(service.HostsLoadFailed);
+    }
+
+    [Theory]
+    [InlineData(true, false, "a.bin", true)]   // über Debrid angelegt: immer
+    [InlineData(true, true, "a.html", true)]
+    [InlineData(false, true, "a.bin", true)]   // Debrid an: jeder Name, der keine Webseite ist
+    [InlineData(false, true, "movie", true)]
+    [InlineData(false, true, "a.html", false)]
+    [InlineData(false, true, "a.HTM", false)]
+    [InlineData(false, false, "a.bin", false)] // Debrid aus: wie bisher
+    public void Html_is_rejected_for_debrid_downloads_and_while_debrid_is_on(bool via, bool enabled, string name, bool expected) =>
+        Assert.Equal(expected, Downloads.DownloadManager.ShouldRejectHtml(via, enabled, name));
+
+    [Fact]
+    public void Html_error_text_names_the_missing_host_list()
+    {
+        string plain = Downloads.ErrorText.Describe(new HtmlResponseException());
+        string noHosts = Downloads.ErrorText.Describe(new HtmlResponseException(hostsUnavailable: true));
+
+        Assert.Equal(Loc.T("Error.HtmlResponse"), plain);
+        Assert.Equal(Loc.T("Error.HtmlResponse.NoHosts"), noHosts);
+        Assert.NotEqual(plain, noHosts);
+        Assert.Contains("Debrid", noHosts);
+    }
+
+    [Fact]
+    public async Task Hoster_link_is_not_stored_as_a_finished_file_when_the_service_was_down()
+    {
+        _fake.HostsOverride = (503, "<html>down</html>");
+        var service = Service();
+        Assert.Null(await service.TryUnlockAsync("https://mega.nz/file/ok", null, default)); // lädt direkt
+
+        using var server = new TestServer(40_000) { ContentType = "text/html" }; // die Webseite des Hosters
+        using var dir = new TempDir();
+        string path = dir.File("file.bin"); // keine Archiv-Endung: nur das Debrid-Flag schützt
+        using var dl = new HttpDownloader(Fast());
+        bool reject = Downloads.DownloadManager.ShouldRejectHtml(false, true, "file.bin");
+
+        await Assert.ThrowsAsync<HtmlResponseException>(
+            () => dl.DownloadAsync(new DownloadRequest(server.Url, path, RejectHtml: reject), null, default));
+        Assert.False(File.Exists(path));
+    }
+
+    [Fact]
     public async Task Debrid_download_whose_host_is_missing_reloads_the_list_once_before_it_fails()
     {
         var service = Service();

@@ -10,9 +10,9 @@
     <AssemblyName>YDownloader</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>..\..\assets\icon.ico</ApplicationIcon>
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <Version>1.0.1</Version>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
     <Product>YDownloader</Product>
     <Description>YDownloader</Description>
     <!-- Die Git-Commit-Kennung nicht an die Version haengen (sonst "1.0.0+hash"). -->

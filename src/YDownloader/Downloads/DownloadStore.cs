@@ -142,26 +142,25 @@ public sealed class DownloadStore
     private readonly object _gate = new();
     private Task _writing = Task.CompletedTask;
 
-    public DownloadStore(string path) => _path = path;
+    private readonly TimeSpan? _retryPause;
 
-    /// <summary>Kaputte Datei wird als <c>.bad</c> beiseitegelegt, statt die Liste beim nächsten Speichern zu verlieren.</summary>
+    public DownloadStore(string path, TimeSpan? retryPause = null)
+    {
+        _path = path;
+        _retryPause = retryPause;
+    }
+
+    /// <summary>Wie das letzte <see cref="Load"/> ausging. Bei <see cref="DataFileState.Locked"/> darf nicht gespeichert werden.</summary>
+    public DataFileState LoadState { get; private set; }
+
+    /// <summary>
+    /// Gesperrte Datei: mehrmals neu lesen, sonst <see cref="LoadState"/> = Locked, die Datei bleibt unberührt. Kaputte Datei:
+    /// wird als <c>.bad</c> beiseitegelegt, statt die Liste beim nächsten Speichern zu verlieren.
+    /// </summary>
     public DownloadList Load()
     {
-        try
-        {
-            if (!File.Exists(_path)) return new DownloadList();
-            return JsonSerializer.Deserialize(AtomicFile.ReadJson(_path), DownloadJsonContext.Default.DownloadList)
-                ?? new DownloadList();
-        }
-        catch (JsonException)
-        {
-            try { File.Copy(_path, _path + ".bad", overwrite: true); } catch (IOException) { }
-            return new DownloadList();
-        }
-        catch (IOException)
-        {
-            return new DownloadList();
-        }
+        LoadState = DataFile.Load(_path, DownloadJsonContext.Default.DownloadList, out var list, _retryPause);
+        return list ?? new DownloadList();
     }
 
     public static byte[] ToJson(DownloadList list) =>

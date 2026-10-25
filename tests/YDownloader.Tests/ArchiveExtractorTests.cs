@@ -220,7 +220,60 @@ public class ArchiveExtractorTests : IDisposable
         File.WriteAllBytes(zip, Enumerable.Range(0, 300).Select(i => (byte)i).ToArray());
         var r = Extractor().Run(Single(zip, target, ArchiveType.Zip), CancellationToken.None);
         Assert.Equal(ExtractState.Failed, r.State);
-        Assert.Equal(ExtractFailure.Unreadable, r.Failure);
+        Assert.Equal(ExtractFailure.Corrupt, r.Failure);
+    }
+
+    /// <summary>Setzt das Verfahren im Verzeichnis der ZIP auf <paramref name="method"/> (die Daten bleiben, wie sie sind).</summary>
+    private static void PatchMethod(string zip, ushort method)
+    {
+        var bytes = File.ReadAllBytes(zip);
+        for (int i = 0; i + 12 < bytes.Length; i++)
+            if (bytes[i] == 0x50 && bytes[i + 1] == 0x4b && bytes[i + 2] == 1 && bytes[i + 3] == 2)
+                BitConverter.GetBytes(method).CopyTo(bytes, i + 10);
+        File.WriteAllBytes(zip, bytes);
+    }
+
+    [Fact]
+    public void Zip_with_unknown_method_and_no_other_tool_names_the_method_and_skips_dotnet()
+    {
+        string target = Dir("pkg");
+        string zip = MakeZip(Path.Combine(_root, "z.zip"), ("a.txt", "a"));
+        PatchMethod(zip, 93);
+        var r = Extractor().Run(Single(zip, target, ArchiveType.Zip), CancellationToken.None);
+        Assert.Equal(ExtractState.Failed, r.State);
+        Assert.Equal(ExtractFailure.UnsupportedMethod, r.Failure);
+        Assert.Equal("Zstandard|install", r.Detail);
+        Assert.Empty(Directory.GetFileSystemEntries(target));
+        Assert.True(File.Exists(zip));
+    }
+
+    [Fact]
+    public void Dotnet_failure_falls_back_to_tar()
+    {
+        // Ein 7z mit der Endung .zip: .NET kann es nicht öffnen, tar erkennt das Format am Inhalt.
+        string src = Dir("src");
+        File.WriteAllText(Path.Combine(src, "one.txt"), "eins");
+        string seven = Path.Combine(_root, "real.7z");
+        Assert.Equal(0, RunTar("-a", "-cf", seven, "-C", src, "one.txt"));
+        string zip = Path.Combine(_root, "disguised.zip");
+        File.Move(seven, zip);
+        string target = Dir("pkg");
+        var r = Extractor(tar: Tar).Run(Single(zip, target, ArchiveType.Zip), CancellationToken.None);
+        Assert.Equal(ExtractState.Done, r.State);
+        Assert.Equal("eins", File.ReadAllText(Path.Combine(target, "one.txt")));
+        Assert.Empty(Directory.GetDirectories(target, ".ydl-extract-*"));
+    }
+
+    [Fact]
+    public void All_extractors_failing_reports_damage_not_a_generic_error()
+    {
+        string zip = Path.Combine(_root, "bad.zip");
+        File.WriteAllBytes(zip, Enumerable.Range(0, 3000).Select(i => (byte)(i * 13)).ToArray());
+        string target = Dir("pkg");
+        var r = Extractor(tar: Tar).Run(Single(zip, target, ArchiveType.Zip), CancellationToken.None);
+        Assert.Equal(ExtractState.Failed, r.State);
+        Assert.Equal(ExtractFailure.Corrupt, r.Failure);
+        Assert.Empty(Directory.GetFileSystemEntries(target));
     }
 
     [Fact]
@@ -301,7 +354,7 @@ public class ArchiveExtractorTests : IDisposable
         string target = Dir("pkg");
         var r = Extractor(tar: Tar).Run(Single(archive, target, ArchiveType.SevenZip), CancellationToken.None);
         Assert.Equal(ExtractState.Failed, r.State);
-        Assert.Equal(ExtractFailure.ToolFailed, r.Failure);
+        Assert.Equal(ExtractFailure.Corrupt, r.Failure); // „Unrecognized archive format“ von tar
         Assert.Empty(Directory.GetFileSystemEntries(target));
     }
 

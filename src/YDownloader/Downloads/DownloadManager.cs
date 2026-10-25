@@ -81,7 +81,7 @@ public sealed class DownloadManager
         _saveDelay.Tick += (_, _) =>
         {
             _saveDelay.Stop();
-            Store.SaveInBackground(Snapshot());
+            if (_listLoaded) Store.SaveInBackground(Snapshot());
         };
 
         AfterCompletion = new AfterCompletion(power ?? NoPowerActions.Instance, afterCountdown)
@@ -107,8 +107,14 @@ public sealed class DownloadManager
     private void FlushSave()
     {
         _saveDelay.Stop();
-        Store.SaveNow(Snapshot());
+        if (_listLoaded) Store.SaveNow(Snapshot());
     }
+
+    /// <summary>
+    /// Erst wahr, wenn die Liste erfolgreich geladen wurde (oder es noch keine Datei gab). Davor und nach einem Fehlschlag
+    /// wird nie geschrieben: Eine leere Liste würde sonst die Datei überschreiben, die wir nur nicht lesen konnten.
+    /// </summary>
+    private bool _listLoaded;
 
     /// <summary>Läuft oder wartet etwas, ohne Rücksicht auf Zeitpläne? Angehaltene Downloads zählen nicht.</summary>
     private bool HasPendingWork() => _running.Count > 0 || Items.Any(i => i.Status == DownloadStatus.Queued);
@@ -142,10 +148,80 @@ public sealed class DownloadManager
         SaveSettings();
     }
 
+    // ---------------------------------------------------------------- Einstellungen speichern
+
+    private LatestWriter? _settingsWriter;
+    private int _quietWrites;
+    private bool _writeFailureShown;
+
+    /// <summary>Nein, wenn <c>settings.json</c> beim Start nicht lesbar war: Die Vorgaben im Speicher dürfen sie nicht ersetzen.</summary>
+    private bool SettingsWritable => DataFile.MaySave(Settings.LoadState);
+
+    /// <summary>Schreibkette: höchstens ein Schreibvorgang zugleich, der neueste Stand gewinnt.</summary>
+    private LatestWriter SettingsWriter
+    {
+        get
+        {
+            if (_settingsWriter is null)
+            {
+                _settingsWriter = new LatestWriter(() => AppPaths.SettingsFile);
+                _settingsWriter.Completed += OnSettingsWritten;
+            }
+            return _settingsWriter;
+        }
+    }
+
+    private void OnSettingsWritten(Exception? error)
+    {
+        if (error is null)
+        {
+            _writeFailureShown = false;
+            return;
+        }
+        // Wartet das Einstellungs-Sheet auf dieses Ergebnis, meldet es den Fehler selbst. Sonst einmal, nicht bei jedem Versuch.
+        if (Volatile.Read(ref _quietWrites) > 0 || _writeFailureShown) return;
+        _writeFailureShown = true;
+        string message = error.Message;
+        _dispatcher.BeginInvoke(() => RaiseNotice(Loc.T("Notice.Title.SaveFailed"),
+            Loc.T("Notice.SaveFailed.Text", Path.GetFileName(AppPaths.SettingsFile), message)));
+    }
+
     public void SaveSettings()
     {
-        byte[] json = Settings.ToJson();
-        Task.Run(() => AppSettings.Write(AppPaths.SettingsFile, json));
+        if (!SettingsWritable) return;
+        SettingsWriter.Submit(Settings.ToJson());
+    }
+
+    /// <summary>Wie <see cref="SaveSettings"/>, wartet aber auf das Schreiben. Liefert eine Fehlermeldung oder null.</summary>
+    public async Task<string?> SaveSettingsAsync()
+    {
+        string file = Path.GetFileName(AppPaths.SettingsFile);
+        if (!SettingsWritable) return Loc.T("Notice.Locked.Text", file);
+        Interlocked.Increment(ref _quietWrites);
+        try
+        {
+            var error = await SettingsWriter.Submit(Settings.ToJson());
+            return error is null ? null : Loc.T("Notice.SaveFailed.Text", file, error.Message);
+        }
+        finally
+        {
+            Interlocked.Decrement(ref _quietWrites);
+        }
+    }
+
+    // ---------------------------------------------------------------- Hinweise auf Datenprobleme
+
+    private readonly Dispatcher _dispatcher = Dispatcher.CurrentDispatcher;
+
+    /// <summary>Hinweise, die das Hauptfenster noch zeigen muss (Datei gesperrt oder kaputt, Speichern gescheitert).</summary>
+    public Queue<DataNotice> Notices { get; } = new();
+
+    public event EventHandler? NoticesChanged;
+
+    private void RaiseNotice(string title, string message)
+    {
+        Notices.Enqueue(new DataNotice(title, message));
+        NoticesChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Nach Änderungen im Einstellungs-Sheet: speichern, ein höheres Limit sofort nutzen.</summary>
@@ -160,10 +236,22 @@ public sealed class DownloadManager
 
     public void SettingsChanged()
     {
+        ApplyChanges();
+        SaveSettings();
+    }
+
+    /// <summary>Wie <see cref="SettingsChanged"/>, wartet aber auf das Schreiben. Liefert eine Fehlermeldung oder null.</summary>
+    public Task<string?> SettingsChangedAsync()
+    {
+        ApplyChanges();
+        return SaveSettingsAsync();
+    }
+
+    private void ApplyChanges()
+    {
         _freeSpace?.Refresh(); // der Zielordner kann ein anderes Laufwerk sein
         ApplyHostSettings();
         UpdateKeepAwake();
-        SaveSettings();
         Pump();
     }
 
@@ -177,6 +265,9 @@ public sealed class DownloadManager
     /// </summary>
     public async Task<string?> MoveDataAsync(bool portable)
     {
+        // Liste oder Einstellungen nicht sicher geladen: Eine leere Liste oder die Vorgaben dürfen nicht in den Zielordner.
+        if (!_listLoaded) return Loc.T("Notice.Locked.Text", Path.GetFileName(AppPaths.DownloadsFile));
+        if (!SettingsWritable) return Loc.T("Notice.Locked.Text", Path.GetFileName(AppPaths.SettingsFile));
         byte[] downloads = DownloadStore.ToJson(Snapshot());
         byte[] settings = Settings.ToJson();
         try
@@ -216,6 +307,11 @@ public sealed class DownloadManager
         if (_settingsLoad is null) return;
         Settings = _settingsLoad.GetAwaiter().GetResult();
         _settingsLoad = null;
+        string file = Path.GetFileName(AppPaths.SettingsFile);
+        if (Settings.LoadState == DataFileState.Locked)
+            RaiseNotice(Loc.T("Notice.Title.Locked"), Loc.T("Notice.Locked.Text", file));
+        else if (Settings.LoadState == DataFileState.Corrupt)
+            RaiseNotice(Loc.T("Notice.Title.Corrupt"), Loc.T("Notice.Corrupt.Text", file, file + ".bad"));
         if (Settings.CategoriesMigrated) SaveSettings(); // Kennungen der eingebauten Kategorien, einmalig
         ApplyHostSettings();
         ApplyQueueSettings();
@@ -237,7 +333,15 @@ public sealed class DownloadManager
 
     public async Task LoadAsync()
     {
-        var list = await Task.Run(() => Store.Load());
+        var store = Store;
+        var list = await Task.Run(() => store.Load());
+        if (_shuttingDown) return; // Beenden vor dem Ende des Ladens: nichts anfassen, nichts schreiben
+        _listLoaded = DataFile.MaySave(store.LoadState);
+        if (store.LoadState == DataFileState.Locked)
+            RaiseNotice(Loc.T("Notice.Title.Locked"), Loc.T("Notice.Locked.Text", Path.GetFileName(AppPaths.DownloadsFile)));
+        else if (store.LoadState == DataFileState.Corrupt)
+            RaiseNotice(Loc.T("Notice.Title.Corrupt"),
+                Loc.T("Notice.Corrupt.Text", Path.GetFileName(AppPaths.DownloadsFile), Path.GetFileName(AppPaths.DownloadsFile) + ".bad"));
         Items.AddRange(list.Items.Select(DownloadItem.FromEntry));
         foreach (var item in Items) // eine Queue, die es nicht mehr gibt (settings.json von Hand geändert): Standard-Queue
             if (item.QueueId is not null && Settings.FindQueue(item.QueueId) is null) item.QueueId = null;
@@ -697,6 +801,10 @@ public sealed class DownloadManager
         }
         catch (Exception ex)
         {
+            // Debrid an, aber die Hoster-Liste war nicht zu bekommen: Der Link ging nicht an den Dienst, das sagt die Meldung.
+            if (ex is HtmlResponseException { HostsUnavailable: false } && !item.ViaDebrid && Settings.Debrid.Enabled
+                && _debrid?.HostsLoadFailed == true)
+                ex = new HtmlResponseException(hostsUnavailable: true);
             item.Fail(ex);
         }
         finally
@@ -778,8 +886,44 @@ public sealed class DownloadManager
                     item.FileName = UniqueName(item.Folder, FileNames.Sanitize(name, item.FileName), item);
             }
         }
+        if (!item.ViaDebrid) await ImproveGuessedNameAsync(item, ct);
         return new DownloadRequest(url, item.TargetPath, ChecksumText.Parse(item.Checksum), Events: item, ResumeKey: resumeKey,
-            ProtectPartial: item.ViaDebrid, RejectHtml: item.ViaDebrid);
+            ProtectPartial: item.ViaDebrid, RejectHtml: ShouldRejectHtml(item.ViaDebrid, Settings.Debrid.Enabled, item.FileName));
+    }
+
+    /// <summary>
+    /// Eine Webseite als Antwort ist ein Fehler: immer bei Downloads über Debrid, und bei eingeschaltetem Debrid für jeden
+    /// Namen, der nicht selbst eine Webseite ist (fällt der Dienst aus oder fehlt die Hoster-Liste, lädt ein Hoster-Link sonst
+    /// direkt und „fertig“ ist dessen Webseite).
+    /// </summary>
+    internal static bool ShouldRejectHtml(bool viaDebrid, bool debridEnabled, string fileName) =>
+        viaDebrid || (debridEnabled && !FileNames.IsPageName(fileName));
+
+    /// <summary>
+    /// Der Name des direkten Downloads kam nur aus der Adresse (kein Dateiname, <c>download.php</c>, ...) und die Dialog-Probe
+    /// hat ihn nicht verbessert: Ein Blick auf die Antwort des Servers (Content-Disposition, Weiterleitung, Content-Type) liefert
+    /// oft den echten. Nur solange noch nichts auf der Platte liegt; ein Fehler der Abfrage ändert nichts (die Engine meldet ihn selbst).
+    /// </summary>
+    private async Task ImproveGuessedNameAsync(DownloadItem item, CancellationToken ct)
+    {
+        if (item.DownloadedBytes != 0 || !NameIsGuessed(item.FileName, item.Url)) return;
+        if (File.Exists(item.TargetPath + ".part") || File.Exists(item.TargetPath + ".part.json")) return;
+        if (!Uri.TryCreate(item.Url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https")) return;
+        try
+        {
+            var info = await Task.Run(() => Prober.ProbeAsync(item.Url, ct), ct);
+            if (!FileNames.HasRealExtension(info.FileName) || string.Equals(info.FileName, item.FileName, StringComparison.OrdinalIgnoreCase))
+                return;
+            item.FileName = UniqueName(item.Folder, info.FileName, item);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            // Die Engine fragt gleich selbst und meldet den Fehler.
+        }
     }
 
     /// <summary>
@@ -789,10 +933,16 @@ public sealed class DownloadManager
     internal static bool NameIsGuessed(string fileName, string url)
     {
         if (Path.GetExtension(fileName).ToLowerInvariant() is "" or ".html" or ".htm" or ".php" or ".asp" or ".aspx") return true;
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || FileNames.FromUrl(uri) is not { } derived) return false;
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
         string name = System.Text.RegularExpressions.Regex.Replace(fileName, @" \(\d+\)(?=\.[^.]*$|$)", "");
-        return string.Equals(name, FileNames.Sanitize(derived), StringComparison.OrdinalIgnoreCase)
-            || string.Equals(name, FileNames.Sanitize(FileNames.StripPageSuffix(derived)), StringComparison.OrdinalIgnoreCase);
+        foreach (string? derived in new[] { FileNames.FromUrl(uri), FileNames.GuessFromUrls(uri) })
+        {
+            if (derived is null) continue;
+            if (string.Equals(name, FileNames.Sanitize(derived), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(name, FileNames.Sanitize(FileNames.StripPageSuffix(derived)), StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
 
     /// <summary>
@@ -1136,7 +1286,8 @@ public sealed class DownloadManager
                 item.EndRun(DownloadStatus.Paused);
             }
         }
-        Store.SaveNow(Snapshot());
+        if (_listLoaded) Store.SaveNow(Snapshot());
+        _settingsWriter?.Flush();
         _pool.Dispose();
     }
 }
